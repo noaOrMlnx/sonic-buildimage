@@ -1,5 +1,5 @@
 {% from "dockers/dockerfile-macros.j2" import install_debian_packages, install_python_wheels, copy_files %}
-FROM docker-config-engine-stretch
+FROM docker-config-engine-buster
 
 ARG docker_container_name
 RUN [ -f /etc/rsyslog.conf ] && sed -ri "s/%syslogtag%/$docker_container_name#%syslogtag%/;" /etc/rsyslog.conf
@@ -11,14 +11,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update &&   \
     apt-get install -y  \
         python-pip      \
-        libpython2.7    \
         ipmitool        \
         librrd8         \
         librrd-dev      \
         rrdtool         \
         python-smbus    \
         ethtool         \
-        dmidecode
+        dmidecode       \
+        i2c-tools &&    \
+    pip install enum34
 
 {% if docker_platform_monitor_debs.strip() -%}
 # Copy locally-built Debian package dependencies
@@ -54,8 +55,8 @@ RUN apt-get purge -y           \
            /python-wheels      \
            ~/.cache
 
-COPY ["docker_init.sh", "lm-sensors.sh", "/usr/bin/"]
-COPY ["docker-pmon.supervisord.conf.j2", "start.sh.j2", "/usr/share/sonic/templates/"]
+COPY ["docker_init.sh", "lm-sensors.sh", "start.sh", "/usr/bin/"]
+COPY ["docker-pmon.supervisord.conf.j2", "/usr/share/sonic/templates/"]
 COPY ["ssd_tools/*", "/usr/bin/"]
 COPY ["files/supervisor-proc-exit-listener", "/usr/bin"]
 COPY ["critical_processes", "/etc/supervisor"]

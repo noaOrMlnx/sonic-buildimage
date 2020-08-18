@@ -6,7 +6,7 @@ import json
 import random
 
 def output(dvs, title):
-    print "=========================== %s ===========================" % title
+    print("=========================== %s ===========================" % title)
     exit_cod,  sum_res =  dvs.runcmd(["vtysh", "-c", "show ip bgp sum"])
     exit_code, all_route = dvs.runcmd(["vtysh", "-c", "show ip bgp"])
     exit_code, neig_1           = dvs.runcmd(["vtysh", "-c", "show ip bgp neighbors 10.0.0.1"])
@@ -14,22 +14,22 @@ def output(dvs, title):
     exit_code, received_route_1 = dvs.runcmd(["vtysh", "-c", "show ip bgp neighbors 10.0.0.1 routes"])
     exit_code, announce_route_3 = dvs.runcmd(["vtysh", "-c", "show ip bgp neighbors 10.0.0.3 advertised-routes"])
     exit_code, received_route_3 = dvs.runcmd(["vtysh", "-c", "show ip bgp neighbors 10.0.0.3 routes"])
-    print "Summary:"
-    print sum_res
-    print "Received routes:"
-    print "10.0.0.1"
-    print received_route_1
-    print "10.0.0.3"
-    print received_route_3
-    print "Announces routes:"
-    print "10.0.0.1"
-    print announce_route_1
-    print "10.0.0.3"
-    print announce_route_3
-    print "Neighbors"
-    print "10.0.0.1"
-    print neig_1
-    print "======================================================"
+    print("Summary:")
+    print(sum_res)
+    print("Received routes:")
+    print("10.0.0.1")
+    print(received_route_1)
+    print("10.0.0.3")
+    print(received_route_3)
+    print("Announces routes:")
+    print("10.0.0.1")
+    print(announce_route_1)
+    print("10.0.0.3")
+    print(announce_route_3)
+    print("Neighbors")
+    print("10.0.0.1")
+    print(neig_1)
+    print("======================================================")
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -66,11 +66,11 @@ def run_exa(dvs, idx, cfg):
     remove(fifo_out_path)
     os.mkfifo(fifo_in_path)
     os.mkfifo(fifo_out_path)
-    os.chmod(fifo_in_path,  0666)
-    os.chmod(fifo_out_path, 0666)
-    print "!!! Start exabgp instance %d" % idx
+    os.chmod(fifo_in_path,  0o666)
+    os.chmod(fifo_out_path, 0o666)
+    print("!!! Start exabgp instance %d" % idx)
     cmd = "exabgp -d --env %s %s" % (get_target_env(idx), cfg)
-    print "Cmd is ___ %s ___" % cmd
+    print("Cmd is ___ %s ___" % cmd)
     return dvs.servers[idx].runcmd_async(cmd)
 
 def run_exacli(dvs, idx, cmd):
@@ -81,15 +81,14 @@ def test_gr_livelock(dvs, testlog):
     dvs.servers[0].runcmd("pip install 'exabgp==4.0.10' --force-reinstall ")
     #
     dvs.copy_file("/etc/frr/", "bgp/files/gr_livelock/bgpd.conf")
-    dvs.servers[0].runcmd("pkill exabgp") # In case previous test didn't stop exa
     dvs.runcmd("supervisorctl stop bgpd")
     time.sleep(5)
     dvs.runcmd("supervisorctl start bgpd")
     dvs.runcmd("ip addr add 10.0.0.0/31 dev Ethernet0")
-    dvs.runcmd("ifconfig Ethernet0 up")
+    dvs.runcmd("config interface startup Ethernet0")
 
     dvs.runcmd("ip addr add 10.0.0.2/31 dev Ethernet4")
-    dvs.runcmd("ifconfig Ethernet4 up")
+    dvs.runcmd("config interface startup Ethernet4")
 
     dvs.servers[0].runcmd("ip addr add 10.0.0.1/31 dev eth0")
     dvs.servers[0].runcmd("ifconfig eth0 up")

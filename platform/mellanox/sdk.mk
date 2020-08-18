@@ -1,5 +1,6 @@
 MLNX_SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sx-kernel/Switch-SDK-drivers/bin/
-MLNX_SDK_VERSION = 4.3.3052
+MLNX_SDK_PKG_BASE_PATH = $(MLNX_SDK_BASE_PATH)/$(BLDENV)/
+MLNX_SDK_VERSION = 4.4.1306
 MLNX_SDK_ISSU_VERSION = 101
 
 MLNX_SDK_DEB_VERSION = $(subst _,.,$(MLNX_SDK_VERSION))
@@ -136,7 +137,7 @@ SX_KERNEL_DEV = sx-kernel-dev_1.mlnx.$(MLNX_SDK_DEB_VERSION)_amd64.deb
 $(eval $(call add_derived_package,$(SX_KERNEL),$(SX_KERNEL_DEV)))
 
 define make_path
-	$(1)_PATH = $(MLNX_SDK_BASE_PATH)
+	$(1)_PATH = $(MLNX_SDK_PKG_BASE_PATH)
 
 endef
 
@@ -151,8 +152,6 @@ SONIC_MAKE_DEBS += $(MLNX_SDK_RDEBS) $(PYTHON_SDK_API)
 else
 SONIC_COPY_DEBS += $(MLNX_SDK_RDEBS) $(PYTHON_SDK_API)
 endif
-
-SONIC_STRETCH_DEBS += $(SX_KERNEL)
 
 mlnx-sdk-packages: $(addprefix $(DEBS_PATH)/, $(MLNX_SDK_RDEBS) $(PYTHON_SDK_API) $(SX_KERNEL))
 

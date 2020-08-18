@@ -67,8 +67,11 @@ elif [ "$IMAGE_TYPE" = "raw" ]; then
     echo "Creating SONiC raw partition : $OUTPUT_RAW_IMAGE of size $RAW_IMAGE_DISK_SIZE MB"
     fallocate -l "$RAW_IMAGE_DISK_SIZE"M $OUTPUT_RAW_IMAGE
 
+    # ensure proc is mounted
+    sudo mount proc /proc -t proc || true
+
     ## Generate a partition dump that can be used to 'dd' in-lieu of using the onie-nos-installer
-    ## Run the installer 
+    ## Run the installer
     ## The 'build' install mode of the installer is used to generate this dump.
     sudo chmod a+x $OUTPUT_ONIE_IMAGE
     sudo ./$OUTPUT_ONIE_IMAGE
@@ -130,6 +133,7 @@ elif [ "$IMAGE_TYPE" = "aboot" ]; then
     sed -i -e "s/%%IMAGE_VERSION%%/$IMAGE_VERSION/g" files/Aboot/boot0
     pushd files/Aboot && zip -g $OLDPWD/$OUTPUT_ABOOT_IMAGE boot0; popd
     pushd files/Aboot && zip -g $OLDPWD/$ABOOT_BOOT_IMAGE boot0; popd
+    pushd files/image_config/secureboot && zip -g $OLDPWD/$OUTPUT_ABOOT_IMAGE allowlist_paths.conf; popd
     echo "$IMAGE_VERSION" >> .imagehash
     zip -g $OUTPUT_ABOOT_IMAGE .imagehash
     zip -g $ABOOT_BOOT_IMAGE .imagehash
@@ -143,6 +147,12 @@ elif [ "$IMAGE_TYPE" = "aboot" ]; then
 
     zip -g $OUTPUT_ABOOT_IMAGE $ABOOT_BOOT_IMAGE
     rm $ABOOT_BOOT_IMAGE
+    if [ "$SONIC_ENABLE_IMAGE_SIGNATURE" = "y" ]; then
+        TARGET_CA_CERT="$TARGET_PATH/ca.cert"
+        rm -f "$TARGET_CA_CERT"
+        [ -f "$CA_CERT" ] && cp "$CA_CERT" "$TARGET_CA_CERT"
+        ./scripts/sign_image.sh -i "$OUTPUT_ABOOT_IMAGE" -k "$SIGNING_KEY" -c "$SIGNING_CERT" -a "$TARGET_CA_CERT"
+    fi
 else
     echo "Error: Non supported image type $IMAGE_TYPE"
     exit 1

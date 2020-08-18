@@ -24,7 +24,6 @@ NAT_WARM_BOOT_FILE = 'nat_entries.dump'
 IP_PROTO_TCP       = '6'
 
 MATCH_CONNTRACK_ENTRY = '^(\w+)\s+(\d+).*src=([\d.]+)\s+dst=([\d.]+)\s+sport=(\d+)\s+dport=(\d+).*src=([\d.]+)\s+dst=([\d.]+)\s+sport=(\d+)\s+dport=(\d+)'
-REDIS_SOCK = "/var/run/redis/redis.sock"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -37,14 +36,14 @@ def add_nat_conntrack_entry_in_kernel(ipproto, srcip, dstip, srcport, dstport, n
     if (ipproto == IP_PROTO_TCP):
         state = ' --state ESTABLISHED '
     ctcmd = 'conntrack -I -n ' + natdstip + ':' + natdstport + ' -g ' + natsrcip + ':' + natsrcport + \
-                       ' --protonum ' + ipproto + state + ' --timeout 600 --src ' + srcip + ' --sport ' + srcport + \
+                       ' --protonum ' + ipproto + state + ' --timeout 432000 --src ' + srcip + ' --sport ' + srcport + \
                        ' --dst ' + dstip + ' --dport ' + dstport + ' -u ASSURED'
     subprocess.call(ctcmd, shell=True)
     logger.info("Restored NAT entry: {}".format(ctcmd))
 
 # Set the statedb "NAT_RESTORE_TABLE|Flags", so natsyncd can start reconciliation
 def set_statedb_nat_restore_done():
-    statedb = swsscommon.DBConnector(swsscommon.STATE_DB, REDIS_SOCK, 0)
+    statedb = swsscommon.DBConnector("STATE_DB", 0)
     tbl = swsscommon.Table(statedb, "NAT_RESTORE_TABLE")
     fvs = swsscommon.FieldValuePairs([("restored", "true")])
     tbl.set("Flags", fvs)

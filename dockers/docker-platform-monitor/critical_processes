@@ -1,5 +1,3 @@
-fancontrol
-ledd
-xcvrd
-psud
-syseepromd
+program:ledd
+program:xcvrd
+program:psud

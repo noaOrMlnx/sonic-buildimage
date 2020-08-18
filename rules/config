@@ -16,6 +16,10 @@ SONIC_CONFIG_BUILD_JOBS = 1
 # Corresponding -j argument will be passed to make/dpkg commands that build separate packages
 SONIC_CONFIG_MAKE_JOBS = $(shell nproc)
 
+# DEFAULT_BUILD_LOG_TIMESTAMP - add timestamp in build log
+# Supported format: simple, none
+DEFAULT_BUILD_LOG_TIMESTAMP = none
+
 # SONIC_USE_DOCKER_BUILDKIT - use docker buildkit for build.
 # If set to y SONiC build system will set environment variable DOCKER_BUILDKIT=1
 # to enable docker buildkit.
@@ -79,9 +83,6 @@ ENABLE_ORGANIZATION_EXTENSIONS = y
 #SONIC_DEBUGGING_ON = y
 #SONIC_PROFILING_ON = y
 
-# ENABLE_SYSTEM_TELEMETRY - build docker-sonic-telemetry for system telemetry support
-ENABLE_SYSTEM_TELEMETRY = y
-
 # DEFAULT_KERNEL_PROCURE_METHOD - default method for obtaining kernel
 #   build:    build kernel from source
 #   download: download pre-built kernel from Azure storage.
@@ -96,17 +97,60 @@ DEFAULT_KERNEL_PROCURE_METHOD = build
 FRR_USER_UID = 300
 FRR_USER_GID = 300
 
+# DPKG cache allows the .deb files to be stored in the cache path. This allows the submodules
+# package to be cached and restored back if its commit hash is not modified and its dependencies are not modified.
+# SONIC_DPKG_CACHE_METHOD - Default method of deb package caching
+#	none    :  no caching
+#	rwcache :  Use cache if exists else build the source and update the cache
+#	wcache  :  Dont use the cache and just build the source and update the cache
+#	rcache  :  Use cache if exists, but dont update the cache
+#	cache   :  Same as rwcache
+# SONIC_DPKG_CACHE_SOURCE - Stores the cache location details
+SONIC_DPKG_CACHE_METHOD ?= none
+SONIC_DPKG_CACHE_SOURCE ?= /var/cache/sonic/artifacts
+
 # Default VS build memory preparation
 DEFAULT_VS_PREPARE_MEM = yes
 
-# ENABLE_SYSTEM_SFLOW - build docker-sonic-sflow for sFlow support
-ENABLE_SFLOW = y
 
-# ENABLE_MGMT_FRAMEWORK - build docker-sonic-mgt-framework for CLI and REST server support
-ENABLE_MGMT_FRAMEWORK = y
+# INCLUDE_SYSTEM_TELEMETRY - build docker-sonic-telemetry for system telemetry support
+INCLUDE_SYSTEM_TELEMETRY = y
 
-# ENABLE_RESTAPI - build docker-sonic-restapi for configuring the switch using REST APIs
-ENABLE_RESTAPI = n
+# INCLUDE_ICCPD - build docker-iccpd for mclag support
+INCLUDE_ICCPD = n
 
-# ENABLE_NAT - build docker-sonic-nat for nat support
-ENABLE_NAT = y
+# INCLUDE_SFLOW - build docker-sflow for sFlow support
+INCLUDE_SFLOW = y
+
+# INCLUDE_MGMT_FRAMEWORK - build docker-sonic-mgmt-framework for CLI and REST server support
+INCLUDE_MGMT_FRAMEWORK = y
+
+# INCLUDE_RESTAPI - build docker-sonic-restapi for configuring the switch using REST APIs
+INCLUDE_RESTAPI = n
+
+# INCLUDE_NAT - build docker-nat for nat support
+INCLUDE_NAT = y
+
+# TELEMETRY_WRITABLE - Enable write/config operations via the gNMI interface.
+# Uncomment to enable:
+# TELEMETRY_WRITABLE = y
+# INCLUDE_KUBERNETES - if set to y kubernetes packages are installed to be able to
+# run as worker node in kubernetes cluster.
+INCLUDE_KUBERNETES = n
+
+# KUBERNETES_VERSION - Set to the required version.
+# K8s_GCR_IO_PAUSE_VERSION - Version of k8s universal pause container image
+# These are Used *only* when INCLUDE_KUBERNETES=y
+# NOTE: As a worker node it has to run version compatible to kubernetes master.
+#
+KUBERNETES_VERSION = 1.18.6
+KUBERNETES_CNI_VERSION = 0.8.6
+K8s_GCR_IO_PAUSE_VERSION = 3.2
+
+# SONIC_ENABLE_IMAGE_SIGNATURE - enable image signature
+# To not use the auto-generated self-signed certificate, the required files to sign the image as below:
+#     SIGNING_KEY =
+#     SIGNING_CERT =
+#     CA_CERT =
+# The relative path is build root folder.
+SONIC_ENABLE_IMAGE_SIGNATURE ?= n

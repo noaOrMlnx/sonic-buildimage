@@ -1,7 +1,7 @@
 # snmpd package
 
 SNMPD_VERSION = 5.7.3+dfsg
-SNMPD_VERSION_FULL = $(SNMPD_VERSION)-1.5
+SNMPD_VERSION_FULL = $(SNMPD_VERSION)-5
 
 export SNMPD_VERSION SNMPD_VERSION_FULL
 
@@ -27,10 +27,10 @@ $(SNMPD)_RDEPENDS += $(LIBSNMP)
 $(eval $(call add_derived_package,$(LIBSNMP_BASE),$(SNMPD)))
 
 SNMP_DBG = snmp-dbgsym_$(SNMPD_VERSION_FULL)_$(CONFIGURED_ARCH).deb
-$(eval $(call add_derived_package,$(SNMP),$(SNMP_DBG)))
+$(eval $(call add_derived_package,$(LIBSNMP_BASE),$(SNMP_DBG)))
 
 SNMPD_DBG = snmpd-dbgsym_$(SNMPD_VERSION_FULL)_$(CONFIGURED_ARCH).deb
-$(eval $(call add_derived_package,$(SNMPD),$(SNMPD_DBG)))
+$(eval $(call add_derived_package,$(LIBSNMP_BASE),$(SNMPD_DBG)))
 
 LIBSNMP = libsnmp30_$(SNMPD_VERSION_FULL)_$(CONFIGURED_ARCH).deb
 $(LIBSNMP)_RDEPENDS += $(LIBSNMP_BASE)

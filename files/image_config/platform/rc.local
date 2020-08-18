@@ -11,8 +11,16 @@
 #
 # By default this script does nothing.
 
-SONIC_VERSION=$(sonic-cfggen -y /etc/sonic/sonic_version.yml -v build_version)
+SONIC_VERSION=$(cat /etc/sonic/sonic_version.yml | grep "build_version" | sed -e "s/build_version: //g;s/'//g")
 FIRST_BOOT_FILE="/host/image-${SONIC_VERSION}/platform/firsttime"
+
+# Move sonic-environment to /etc/sonic
+SONIC_CONFIG_DIR="/host/image-${SONIC_VERSION}/sonic-config"
+SONIC_ENV_FILE=${SONIC_CONFIG_DIR}/sonic-environment
+if [ -d ${SONIC_CONFIG_DIR} -a -f ${SONIC_ENV_FILE} ]; then
+    echo "moving file ${SONIC_ENV_FILE} to /etc/sonic" 1>&2
+    mv ${SONIC_ENV_FILE} /etc/sonic
+fi
 
 # In case the unit is migrating from another NOS, save the logs
 log_migration() {
@@ -82,10 +90,6 @@ update_mgmt_interface_macaddr() {
 
     log_migration "eth0 mac in EEPROM after update:"
     ethtool -e eth0 offset $ethtool_offset length 6 >> /host/migration/migration.log
-
-    # Update the 70-persistent-net.rules with the new mac for eth0
-    log_migration "/etc/udev/rules.d/70-persistent-net.rules : replacing $old_mac with $new_mac for eth0"
-    sed -i "/eth0/ s/ATTR{address}==\"$old_mac\"/ATTR{address}==\"$new_mac\"/g" /etc/udev/rules.d/70-persistent-net.rules
 }
 
 firsttime_exit() {
@@ -338,6 +342,12 @@ if [ -f $FIRST_BOOT_FILE ]; then
     mkdir -p /var/platform
 
     firsttime_exit
+fi
+
+# Copy the fsck log into syslog
+if [ -f /var/log/fsck.log.gz ]; then
+    gunzip -d -c /var/log/fsck.log.gz | logger -t "FSCK"
+    rm -f /var/log/fsck.log.gz
 fi
 
 exit 0

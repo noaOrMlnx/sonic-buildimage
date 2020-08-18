@@ -2,7 +2,7 @@
 
 DOCKER_SYNCD_BRCM_RPC = docker-syncd-brcm-rpc.gz
 $(DOCKER_SYNCD_BRCM_RPC)_PATH = $(PLATFORM_PATH)/docker-syncd-brcm-rpc
-$(DOCKER_SYNCD_BRCM_RPC)_DEPENDS += $(SYNCD_RPC) $(LIBTHRIFT)
+$(DOCKER_SYNCD_BRCM_RPC)_DEPENDS += $(SYNCD_RPC) $(LIBTHRIFT) $(PTF)
 ifeq ($(INSTALL_DEBUG_TOOLS), y)
 $(DOCKER_SYNCD_BRCM_RPC)_DEPENDS += $(SYNCD_RPC_DBG) \
                                     $(LIBSWSSCOMMON_DBG) \
@@ -18,7 +18,7 @@ SONIC_INSTALL_DOCKER_IMAGES += $(DOCKER_SYNCD_BRCM_RPC)
 endif
 
 $(DOCKER_SYNCD_BRCM_RPC)_CONTAINER_NAME = syncd
-$(DOCKER_SYNCD_BRCM_RPC)_RUN_OPT += --net=host --privileged -t
+$(DOCKER_SYNCD_BRCM_RPC)_RUN_OPT += --privileged -t
 $(DOCKER_SYNCD_BRCM_RPC)_RUN_OPT += -v /host/machine.conf:/etc/machine.conf
 $(DOCKER_SYNCD_BRCM_RPC)_RUN_OPT += -v /host/warmboot:/var/warmboot
 $(DOCKER_SYNCD_BRCM_RPC)_RUN_OPT += -v /var/run/docker-syncd:/var/run/sswsyncd

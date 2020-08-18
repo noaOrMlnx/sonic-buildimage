@@ -11,7 +11,7 @@
 #
 
 try:
-    import ipaddr as ipaddress
+    import ipaddress
     import os
     import subprocess
     import sys
@@ -44,6 +44,15 @@ def log_error(msg):
     syslog.syslog(syslog.LOG_ERR, msg)
     syslog.closelog()
 
+# ========================== Helper Functions =========================
+
+def _ip_prefix_in_key(key):
+    """
+    Function to check if IP prefix is present in a Redis database key.
+    If it is present, then the key will be a tuple. Otherwise, the
+    key will be a string.
+    """
+    return (isinstance(key, tuple))
 
 # ============================== Classes ==============================
 
@@ -61,12 +70,21 @@ class ControlPlaneAclManager(object):
 
     ACL_TABLE_TYPE_CTRLPLANE = "CTRLPLANE"
 
-    # To specify a port range, use iptables format: separate start and end
-    # ports with a colon, e.g., "1000:2000"
+    # To specify a port range instead of a single port, use iptables format:
+    # separate start and end ports with a colon, e.g., "1000:2000"
     ACL_SERVICES = {
-        "NTP": {"ip_protocols": ["udp"], "dst_ports": ["123"]},
-        "SNMP": {"ip_protocols": ["tcp", "udp"], "dst_ports": ["161"]},
-        "SSH": {"ip_protocols": ["tcp"], "dst_ports": ["22"]}
+        "NTP": {
+            "ip_protocols": ["udp"],
+            "dst_ports": ["123"]
+        },
+        "SNMP": {
+            "ip_protocols": ["tcp", "udp"],
+            "dst_ports": ["161"]
+        },
+        "SSH": {
+            "ip_protocols": ["tcp"],
+            "dst_ports": ["22"]
+        }
     }
 
     def __init__(self):
@@ -115,6 +133,55 @@ class ControlPlaneAclManager(object):
         tcp_flags_str = tcp_flags_str[:-1]
         return tcp_flags_str
 
+    def generate_block_ip2me_traffic_iptables_commands(self):
+        INTERFACE_TABLE_NAME_LIST = [
+            "LOOPBACK_INTERFACE",
+            "MGMT_INTERFACE",
+            "VLAN_INTERFACE",
+            "PORTCHANNEL_INTERFACE",
+            "INTERFACE"
+        ]
+
+        block_ip2me_cmds = []
+
+        # Add iptables rules to drop all packets destined for peer-to-peer interface IP addresses
+        for iface_table_name in INTERFACE_TABLE_NAME_LIST:
+            iface_table = self.config_db.get_table(iface_table_name)
+            if iface_table:
+                for key, _ in iface_table.iteritems():
+                    if not _ip_prefix_in_key(key):
+                        continue
+
+                    iface_name, iface_cidr = key
+                    ip_ntwrk = ipaddress.ip_network(iface_cidr, strict=False)
+
+                    # For VLAN interfaces, the IP address we want to block is the default gateway (i.e.,
+                    # the first available host IP address of the VLAN subnet)
+                    ip_addr = next(ip_ntwrk.hosts()) if iface_table_name == "VLAN_INTERFACE" else ip_ntwrk.network_address
+
+                    if isinstance(ip_ntwrk, ipaddress.IPv4Network):
+                        block_ip2me_cmds.append("iptables -A INPUT -d {}/{} -j DROP".format(ip_addr, ip_ntwrk.max_prefixlen))
+                    elif isinstance(ip_ntwrk, ipaddress.IPv6Network):
+                        block_ip2me_cmds.append("ip6tables -A INPUT -d {}/{} -j DROP".format(ip_addr, ip_ntwrk.max_prefixlen))
+                    else:
+                        log_warning("Unrecognized IP address type on interface '{}': {}".format(iface_name, ip_ntwrk))
+
+        return block_ip2me_cmds
+
+    def is_rule_ipv4(self, rule_props):
+        if (("SRC_IP" in rule_props and rule_props["SRC_IP"]) or
+            ("DST_IP" in rule_props and rule_props["DST_IP"])):
+            return True
+        else:
+            return False
+
+    def is_rule_ipv6(self, rule_props):
+        if (("SRC_IPV6" in rule_props and rule_props["SRC_IPV6"]) or
+            ("DST_IPV6" in rule_props and rule_props["DST_IPV6"])):
+            return True
+        else:
+            return False
+
     def get_acl_rules_and_translate_to_iptables_commands(self):
         """
         Retrieves current ACL tables and rules from Config DB, translates
@@ -147,13 +214,57 @@ class ControlPlaneAclManager(object):
         iptables_cmds.append("ip6tables -F")
         iptables_cmds.append("ip6tables -X")
 
-        # Add iptables commands to allow all IPv4 and IPv6 traffic from localhost
+        # Add iptables/ip6tables commands to allow all traffic from localhost
         iptables_cmds.append("iptables -A INPUT -s 127.0.0.1 -i lo -j ACCEPT")
         iptables_cmds.append("ip6tables -A INPUT -s ::1 -i lo -j ACCEPT")
+
+        # Add iptables/ip6tables commands to allow all incoming packets from established
+        # connections or new connections which are related to established connections
+        iptables_cmds.append("iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT")
+
+        # Add iptables/ip6tables commands to allow bidirectional ICMPv4 ping and traceroute
+        # TODO: Support processing ICMPv4 service ACL rules, and remove this blanket acceptance
+        iptables_cmds.append("iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT")
+        iptables_cmds.append("iptables -A INPUT -p icmp --icmp-type echo-reply -j ACCEPT")
+        iptables_cmds.append("iptables -A INPUT -p icmp --icmp-type destination-unreachable -j ACCEPT")
+        iptables_cmds.append("iptables -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT")
+
+        # Add iptables/ip6tables commands to allow bidirectional ICMPv6 ping and traceroute
+        # TODO: Support processing ICMPv6 service ACL rules, and remove this blanket acceptance
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type echo-request -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type echo-reply -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type destination-unreachable -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type time-exceeded -j ACCEPT")
+
+        # Add iptables/ip6tables commands to allow all incoming Neighbor Discovery Protocol (NDP) NS/NA/RS/RA messages
+        # TODO: Support processing NDP service ACL rules, and remove this blanket acceptance
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type router-solicitation -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p icmpv6 --icmpv6-type router-advertisement -j ACCEPT")
+
+        # Add iptables/ip6tables commands to allow all incoming IPv4 DHCP packets
+        iptables_cmds.append("iptables -A INPUT -p udp --dport 67:68 -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p udp --dport 67:68 -j ACCEPT")
+
+        # Add iptables/ip6tables commands to allow all incoming IPv6 DHCP packets
+        iptables_cmds.append("iptables -A INPUT -p udp --dport 546:547 -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p udp --dport 546:547 -j ACCEPT")
+
+        # Add iptables/ip6tables commands to allow all incoming BGP traffic
+        # TODO: Determine BGP ACLs based on configured device sessions, and remove this blanket acceptance
+        iptables_cmds.append("iptables -A INPUT -p tcp --dport 179 -j ACCEPT")
+        iptables_cmds.append("iptables -A INPUT -p tcp --sport 179 -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p tcp --dport 179 -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p tcp --sport 179 -j ACCEPT")
+
 
         # Get current ACL tables and rules from Config DB
         self._tables_db_info = self.config_db.get_table(self.ACL_TABLE)
         self._rules_db_info = self.config_db.get_table(self.ACL_RULE)
+
+        num_ctrl_plane_acl_rules = 0
 
         # Walk the ACL tables
         for (table_name, table_data) in self._tables_db_info.iteritems():
@@ -197,12 +308,19 @@ class ControlPlaneAclManager(object):
                         # try to do it now. We attempt to determine heuristically based on
                         # whether the src or dst IP of this rule is an IPv4 or IPv6 address.
                         if not table_ip_version:
-                            if (("SRC_IPV6" in rule_props and rule_props["SRC_IPV6"]) or
-                                ("DST_IPV6" in rule_props and rule_props["DST_IPV6"])):
+                            if self.is_rule_ipv6(rule_props):
                                 table_ip_version = 6
-                            elif (("SRC_IP" in rule_props and rule_props["SRC_IP"]) or
-                                  ("DST_IP" in rule_props and rule_props["DST_IP"])):
+                            elif self.is_rule_ipv4(rule_props):
                                 table_ip_version = 4
+
+                        if (self.is_rule_ipv6(rule_props) and (table_ip_version == 4)):
+                            log_error("CtrlPlane ACL table {} is a IPv4 based table and rule {} is a IPV6 rule! Ignoring rule."
+                                                          .format(table_name, rule_id))
+                            acl_rules.pop(rule_props["PRIORITY"])
+                        elif (self.is_rule_ipv4(rule_props) and (table_ip_version == 6)):
+                            log_error("CtrlPlane ACL table {} is a IPv6 based table and rule {} is a IPV4 rule! Ignroing rule."
+                                                          .format(table_name, rule_id))
+                            acl_rules.pop(rule_props["PRIORITY"])
 
                 # If we were unable to determine whether this ACL table contains
                 # IPv4 or IPv6 rules, log a message and skip processing this table.
@@ -246,6 +364,21 @@ class ControlPlaneAclManager(object):
                             rule_cmd += " -j {}".format(rule_props["PACKET_ACTION"])
 
                             iptables_cmds.append(rule_cmd)
+                            num_ctrl_plane_acl_rules += 1
+
+        # Add iptables commands to block ip2me traffic
+        iptables_cmds += self.generate_block_ip2me_traffic_iptables_commands()
+
+        # Add iptables/ip6tables commands to allow all incoming packets with TTL of 0 or 1
+        # This allows the device to respond to tools like tcptraceroute
+        iptables_cmds.append("iptables -A INPUT -m ttl --ttl-lt 2 -j ACCEPT")
+        iptables_cmds.append("ip6tables -A INPUT -p tcp -m hl --hl-lt 2 -j ACCEPT")
+
+        # Finally, if the device has control plane ACLs configured,
+        # add iptables/ip6tables commands to drop all other incoming packets
+        if num_ctrl_plane_acl_rules > 0:
+            iptables_cmds.append("iptables -A INPUT -j DROP")
+            iptables_cmds.append("ip6tables -A INPUT -j DROP")
 
         return iptables_cmds
 

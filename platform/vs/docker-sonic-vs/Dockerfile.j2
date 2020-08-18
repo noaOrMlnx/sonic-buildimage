@@ -1,4 +1,4 @@
-FROM docker-config-engine-stretch
+FROM docker-config-engine-buster
 
 ARG docker_container_name
 RUN [ -f /etc/rsyslog.conf ] && sed -ri "s/%syslogtag%/$docker_container_name#%syslogtag%/;" /etc/rsyslog.conf
@@ -13,6 +13,7 @@ RUN echo "deb http://packages.microsoft.com/repos/sonic-dev/ jessie main" >> /et
 RUN apt-get update
 
 RUN apt-get install -y net-tools \
+                       redis-server=5:6.0.6-1~bpo10+1 \
                        arping \
                        ndisc6 \
                        ethtool \
@@ -22,25 +23,16 @@ RUN apt-get install -y net-tools \
                        python-ply \
                        libqt5core5a \
                        libqt5network5 \
-                       libboost-program-options1.62.0 \
-                       libboost-system1.62.0 \
-                       libboost-thread1.62.0 \
+                       libboost-program-options1.71.0 \
+                       libboost-system1.71.0 \
+                       libboost-thread1.71.0 \
                        libgmp10 \
                        libjudydebian1 \
-                       libdaemon0 \
-                       libjansson4 \
-                       libatomic1 \
-                       libjemalloc1 \
-                       liblua5.1-0 \
-                       lua-bitop  \
-                       lua-cjson \
                        openssh-client \
                        openssh-server \
                        libc-ares2 \
-                       iproute \
-                       libpython2.7 \
+                       iproute2 \
                        grub2-common \
-                       python-click-default-group \
                        python-click \
                        python-natsort \
                        python-tabulate \
@@ -51,13 +43,25 @@ RUN apt-get install -y net-tools \
                        apt-utils \
                        psmisc \
                        tcpdump \
-                       python-scapy
+                       python-scapy \
+                       conntrack \
+                       iptables \
+                       python3-pip
 
 RUN pip install setuptools
+RUN pip3 install setuptools
 RUN pip install py2_ipaddress
 RUN pip install six
 RUN pip install pyroute2==0.5.3 netifaces==0.10.7
 RUN pip install monotonic==1.5
+RUN pip install urllib3
+RUN pip install requests
+RUN pip install crontab
+
+# Install dependencies for Dynamic Port Breakout
+RUN pip install xmltodict==0.12.0
+RUN pip install jsondiff==1.2.0
+RUN pip install ijson==2.6.1
 
 {% if docker_sonic_vs_debs.strip() -%}
 # Copy locally-built Debian package dependencies
@@ -83,6 +87,23 @@ RUN dpkg_apt() { [ -f $1 ] && { dpkg -i $1 || apt-get -y install -f; } || return
 {%- endfor %}
 {%- endif %}
 
+{% if docker_sonic_vs_whls.strip() %}
+# copy all whl PKGs first,
+{% for whl in docker_sonic_vs_whls.split(' ') -%}
+COPY python-wheels/{{ whl }}  python-wheels/
+{% endfor %}
+
+# install PKGs after copying all PKGs to avoid dependency failure
+# use py3 to find python3 package, which is forced by wheel as of now
+{%- for whl in docker_sonic_vs_whls.split(' ') %}
+{%- if 'py3' in whl %}
+RUN pip3 install python-wheels/{{ whl }}
+{% else -%}
+RUN pip install python-wheels/{{ whl }}
+{%- endif %}
+{%- endfor %}
+{% endif %}
+
 # Clean up
 RUN apt-get clean -y
 RUN apt-get autoclean -y
@@ -100,13 +121,16 @@ RUN sed -ri 's/^(save .*$)/# \1/g;                                              
             ' /etc/redis/redis.conf
 
 COPY ["50-default.conf", "/etc/rsyslog.d/"]
-COPY ["start.sh", "orchagent.sh", "/usr/bin/"]
+COPY ["start.sh", "orchagent.sh", "files/remove_chassisdb_config", "/usr/bin/"]
 COPY ["supervisord.conf", "/etc/supervisor/conf.d/"]
 COPY ["files/configdb-load.sh", "/usr/bin/"]
 COPY ["files/arp_update", "/usr/bin/"]
 COPY ["files/buffers_config.j2", "files/qos_config.j2", "/usr/share/sonic/templates/"]
 COPY ["files/sonic_version.yml", "/etc/sonic/"]
 COPY ["database_config.json", "/etc/default/sonic-db/"]
+COPY ["hostname.j2", "/usr/share/sonic/templates/"]
+COPY ["default_chassis_cfg.json", "/etc/default/sonic-db/"]
+COPY ["chassis_db.py", "/usr/bin/"]
 
 # Workaround the tcpdump issue
 RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump

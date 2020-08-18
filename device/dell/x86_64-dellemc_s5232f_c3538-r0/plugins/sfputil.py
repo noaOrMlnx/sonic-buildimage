@@ -49,8 +49,8 @@ class SfpUtil(SfpUtilBase):
     """Platform-specific SfpUtil class"""
 
     PORT_START = 1
-    PORT_END = 64
-    PORTS_IN_BLOCK = 64
+    PORT_END = 34 
+    PORTS_IN_BLOCK = 32
 
     BASE_RES_PATH = "/sys/bus/pci/devices/0000:04:00.0/resource0"
 
@@ -141,6 +141,11 @@ class SfpUtil(SfpUtilBase):
         # Mask off 4th bit for presence
         mask = (1 << 4)
 
+        # Mask off 1st bit for presence 33,34
+        if (port_num > 32):
+            mask =  (1 << 0)
+
+
         # ModPrsL is active low
         if reg_value & mask == 0:
             return True
@@ -188,7 +193,7 @@ class SfpUtil(SfpUtilBase):
         if (reg_value == "" ):
             return False
 
-        # Mask off 4th bit for presence
+        # Mask off 6th bit for lpmode
         mask = (1 << 6)
 		
 	# LPMode is active high; set or clear the bit accordingly
@@ -219,7 +224,7 @@ class SfpUtil(SfpUtilBase):
             return False
 
         # Mask off 4th bit for presence
-        mask = (1 << 6)
+        mask = (1 << 4)
 
         # ResetL is active low
         reg_value = reg_value & ~mask
@@ -239,6 +244,9 @@ class SfpUtil(SfpUtilBase):
 
     def get_transceiver_change_event(self, timeout=0):
         port_dict = {}
+        sleep_time_ms = 500  # Poll interval, in milliseconds
+        sleep_time = sleep_time_ms / 1000.0
+        elapsed_time_ms = 0
         while True:
             for port_num in range(self.port_start, (self.port_end + 1)):
                 presence = self.get_presence(port_num)
@@ -251,9 +259,18 @@ class SfpUtil(SfpUtilBase):
                     port_dict[port_num] = '0'
 
                 if(len(port_dict) > 0):
-                    return True, port_dict
+                    break
 
-            time.sleep(0.5)
+            if len(port_dict) > 0:
+                break
+            if timeout != 0:
+                elapsed_time_ms += sleep_time_ms
+                if elapsed_time_ms > timeout:
+                    break
+            time.sleep(sleep_time)
+            
+        return True, port_dict
+
 
     def get_transceiver_dom_info_dict(self, port_num):
         transceiver_dom_info_dict = {}

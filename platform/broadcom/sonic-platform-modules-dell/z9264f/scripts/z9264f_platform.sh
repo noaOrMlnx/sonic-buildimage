@@ -100,13 +100,25 @@ switch_board_sfp() {
 #Modsel 64 ports to applicable QSFP type modules
 #This enables the adapter to respond for i2c commands
 switch_board_modsel() {
-	resource="/sys/bus/pci/devices/0000:04:00.0/resource0"
-	for ((i=1;i<=64;i++));
-	do
-		port_addr=$(( 16384 + ((i - 1) * 16)))
-		hex=$( printf "0x%x" $port_addr )
-		python /usr/bin/pcisysfs.py --set --offset $hex --val 0x10 --res $resource  > /dev/null 2>&1
-	done
+    resource="/sys/bus/pci/devices/0000:04:00.0/resource0"
+    for ((i=1;i<=64;i++));
+    do
+        port_addr=$(( 16384 + ((i - 1) * 16)))
+        hex=$( printf "0x%x" $port_addr )
+        python /usr/bin/pcisysfs.py --set --offset $hex --val 0x10 --res $resource  > /dev/null 2>&1
+    done
+
+    # Disabling low power mode for last two 10G ports
+    # From last 6th bit: Disable - 0; Enable - 1
+    reg_offset=$(python /usr/bin/pcisysfs.py --get --offset 0x4400 --res $resource | cut -d':' -f 2)
+    reg_offset=$( printf '0x%s' $reg_offset)
+    reg_offset=$( printf '0x%x' $(( $reg_offset & 0xbf )) )
+    python /usr/bin/pcisysfs.py --set --offset 0x4400 --val $reg_offset --res $resource  > /dev/null 2>&1
+
+    reg_offset=$(python /usr/bin/pcisysfs.py --get --offset 0x4410 --res $resource | cut -d':' -f 2)
+    reg_offset=$( printf '0x%s' $reg_offset)
+    reg_offset=$( printf '0x%x' $(( $reg_offset & 0xbf )) )
+    python /usr/bin/pcisysfs.py --set --offset 0x4410 --val $reg_offset --res $resource  > /dev/null 2>&1
 }
 
 # Copy led_proc_init.soc file according to the HWSKU
@@ -139,6 +151,63 @@ remove_python_api_package() {
     fi
 }
 
+# Readout firmware version of the system and
+# store in /var/log/firmware_versions
+platform_firmware_versions()
+{
+    FIRMWARE_VERSION_FILE=/var/log/firmware_versions
+    rm -rf ${FIRMWARE_VERSION_FILE}
+    echo "BIOS: `dmidecode -s system-version `" > $FIRMWARE_VERSION_FILE
+
+    ## Get FPGA version
+    r=`/usr/bin/pcisysfs.py  --get --offset 0x00 --res /sys/bus/pci/devices/0000\:04\:00.0/resource0 | sed  '1d; s/.*\(....\)$/\1/; s/\(..\{1\}\)/\1./'`
+    r_min=$(echo $r | sed 's/.*\(..\)$/0x\1/')
+    r_maj=$(echo $r | sed 's/^\(..\).*/0x\1/')
+    echo "FPGA: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+    ## Get BMC Firmware Revision
+    r=`cat /sys/class/ipmi/ipmi0/device/bmc/firmware_revision`
+    echo "BMC: $r" >> $FIRMWARE_VERSION_FILE
+
+    #System CPLD 0x31 on i2c bus 601 ( physical FPGA I2C-2)
+    r_min=`/usr/sbin/i2cget -y 601 0x31 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+    r_maj=`/usr/sbin/i2cget -y 601 0x31 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+    echo "System CPLD: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+    #Slave CPLD 1 0x30 on i2c bus 600 ( physical FPGA I2C-1)
+    r_min=`/usr/sbin/i2cget -y 600 0x30 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+    r_maj=`/usr/sbin/i2cget -y 600 0x30 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+    echo "Slave CPLD 1: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+    #Slave CPLD 2 0x31 on i2c bus 600 ( physical FPGA I2C-1)
+    r_min=`/usr/sbin/i2cget -y 600 0x31 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+    r_maj=`/usr/sbin/i2cget -y 600 0x31 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+    echo "Slave CPLD 2: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+    #Slave CPLD 3 0x32 on i2c bus 600 ( physical FPGA I2C-1)
+    r_min=`/usr/sbin/i2cget -y 600 0x32 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+    r_maj=`/usr/sbin/i2cget -y 600 0x32 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+    echo "Slave CPLD 3: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+    #Slave CPLD 4 0x33 on i2c bus 600 ( physical FPGA I2C-1)
+    r_min=`/usr/sbin/i2cget -y 600 0x33 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+    r_maj=`/usr/sbin/i2cget -y 600 0x33 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+    echo "Slave CPLD 4: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+}
+
+get_reboot_cause() {
+    REBOOT_REASON_FILE="/host/reboot-cause/platform/reboot_reason"
+    resource="/sys/bus/pci/devices/0000:04:00.0/resource0"
+
+    # Handle First Boot into software version with reboot cause determination support
+    if [[ ! -e $REBOOT_REASON_FILE ]]; then
+        echo "0" > $REBOOT_REASON_FILE
+    else
+        /usr/bin/pcisysfs.py --get --offset 0x18 --res $resource | sed '1d; s/.*:\(.*\)$/\1/;' > $REBOOT_REASON_FILE
+    fi
+    /usr/bin/pcisysfs.py --set --val 0x0 --offset 0x18 --res $resource
+}
+
 init_devnum
 
 if [ "$1" == "init" ]; then
@@ -149,13 +218,16 @@ if [ "$1" == "init" ]; then
     modprobe i2c_ocores
     modprobe dell_z9264f_fpga_ocores
     sys_eeprom "new_device"
+    get_reboot_cause
     switch_board_qsfp_mux "new_device"
     switch_board_qsfp "new_device"
     switch_board_sfp "new_device"
     switch_board_modsel
     init_switch_port_led
     install_python_api_package
-    python /usr/bin/qsfp_irq_enable.py
+    python /usr/bin/port_irq_enable.py
+    platform_firmware_versions
+
 
 elif [ "$1" == "deinit" ]; then
     sys_eeprom "delete_device"

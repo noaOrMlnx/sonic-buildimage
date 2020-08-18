@@ -40,6 +40,40 @@ def obfuscate(data):
     else:
         return data
 
+
+def update_feature_state(feature_name, state):
+    if state == "enabled":
+        start_cmds = []
+        start_cmds.append("sudo systemctl unmask {}.service".format(feature_name))
+        start_cmds.append("sudo systemctl enable {}.service".format(feature_name))
+        start_cmds.append("sudo systemctl start {}.service".format(feature_name))
+        for cmd in start_cmds:
+            syslog.syslog(syslog.LOG_INFO, "Running cmd: '{}'".format(cmd))
+            try:
+                subprocess.check_call(cmd, shell=True)
+            except subprocess.CalledProcessError as err:
+                syslog.syslog(syslog.LOG_ERR, "'{}' failed. RC: {}, output: {}"
+                              .format(err.cmd, err.returncode, err.output))
+                continue
+        syslog.syslog(syslog.LOG_INFO, "Feature '{}' is enabled and started".format(feature_name))
+    elif state == "disabled":
+        stop_cmds = []
+        stop_cmds.append("sudo systemctl stop {}.service".format(feature_name))
+        stop_cmds.append("sudo systemctl disable {}.service".format(feature_name))
+        stop_cmds.append("sudo systemctl mask {}.service".format(feature_name))
+        for cmd in stop_cmds:
+            syslog.syslog(syslog.LOG_INFO, "Running cmd: '{}'".format(cmd))
+            try:
+                subprocess.check_call(cmd, shell=True)
+            except subprocess.CalledProcessError as err:
+                syslog.syslog(syslog.LOG_ERR, "'{}' failed. RC: {}, output: {}"
+                              .format(err.cmd, err.returncode, err.output))
+                continue
+        syslog.syslog(syslog.LOG_INFO, "Feature '{}' is stopped and disabled".format(feature_name))
+    else:
+        syslog.syslog(syslog.LOG_ERR, "Unexpected state value '{}' for feature '{}'".format(state, feature_name))
+
+
 class Iptables(object):
     def __init__(self):
         '''
@@ -114,7 +148,7 @@ class Iptables(object):
             try:
                 subprocess.check_call(cmd, shell=True)
             except subprocess.CalledProcessError as err:
-                syslog.syslog(syslog.LOG_ERR, "{} - failed: return code - {}, output:\n{}"
+                syslog.syslog(syslog.LOG_ERR, "'{}' failed. RC: {}, output: {}"
                               .format(err.cmd, err.returncode, err.output))
 
 class AaaCfg(object):
@@ -178,6 +212,10 @@ class AaaCfg(object):
         auth.update(self.auth)
         tacplus_global = self.tacplus_global_default.copy()
         tacplus_global.update(self.tacplus_global)
+        if 'src_ip' in tacplus_global:
+            src_ip = tacplus_global['src_ip']
+        else:
+            src_ip = None
 
         servers_conf = []
         if self.tacplus_servers:
@@ -192,7 +230,7 @@ class AaaCfg(object):
         env = jinja2.Environment(loader=jinja2.FileSystemLoader('/'), trim_blocks=True)
         env.filters['sub'] = sub
         template = env.get_template(template_file)
-        pam_conf = template.render(auth=auth, servers=servers_conf)
+        pam_conf = template.render(auth=auth, src_ip=src_ip, servers=servers_conf)
         with open(PAM_AUTH_CONF, 'w') as f:
             f.write(pam_conf)
 
@@ -207,15 +245,15 @@ class AaaCfg(object):
         # Add tacplus in nsswitch.conf if TACACS+ enable
         if 'tacacs+' in auth['login']:
             if os.path.isfile(NSS_CONF):
-                self.modify_single_file(NSS_CONF, [ "'/tacplus/b'", "'/^passwd/s/compat/tacplus &/'"])
+                self.modify_single_file(NSS_CONF, [ "'/tacplus/b'", "'/^passwd/s/compat/tacplus &/'", "'/^passwd/s/files/tacplus &/'" ])
         else:
             if os.path.isfile(NSS_CONF):
-                self.modify_single_file(NSS_CONF, [ "'/^passwd/s/tacplus //'" ])
+                self.modify_single_file(NSS_CONF, [ "'/^passwd/s/tacplus //g'" ])
 
         # Set tacacs+ server in nss-tacplus conf
         template_file = os.path.abspath(NSS_TACPLUS_CONF_TEMPLATE)
         template = env.get_template(template_file)
-        nss_tacplus_conf = template.render(debug=self.debug, servers=servers_conf)
+        nss_tacplus_conf = template.render(debug=self.debug, src_ip=src_ip, servers=servers_conf)
         with open(NSS_TACPLUS_CONF, 'w') as f:
             f.write(nss_tacplus_conf)
 
@@ -234,26 +272,40 @@ class HostConfigDaemon:
         self.iptables = Iptables()
         self.iptables.load(lpbk_table)
 
+    def update_all_feature_states(self):
+        feature_table = self.config_db.get_table('FEATURE')
+        for feature_name in feature_table.keys():
+            if not feature_name:
+                syslog.syslog(syslog.LOG_WARNING, "Feature is None")
+                continue
+
+            state = feature_table[feature_name]['state']
+            if not state:
+                syslog.syslog(syslog.LOG_WARNING, "Eanble state of feature '{}' is None".format(feature_name))
+                continue
+
+            update_feature_state(feature_name, state)
+
     def aaa_handler(self, key, data):
         self.aaacfg.aaa_update(key, data)
 
     def tacacs_server_handler(self, key, data):
         self.aaacfg.tacacs_server_update(key, data)
         log_data = copy.deepcopy(data)
-        if log_data.has_key('passkey'):
+        if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
 
     def tacacs_global_handler(self, key, data):
         self.aaacfg.tacacs_global_update(key, data)
         log_data = copy.deepcopy(data)
-        if log_data.has_key('passkey'):
+        if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
 
     def lpbk_handler(self, key, data):
         key = ConfigDBConnector.deserialize_key(key)
-        #Check if delete operation by fetch existing keys
+        # Check if delete operation by fetch existing keys
         keys = self.config_db.get_keys('LOOPBACK_INTERFACE')
         if key in keys:
             add = True
@@ -262,51 +314,29 @@ class HostConfigDaemon:
 
         self.iptables.iptables_handler(key, data, add)
 
-    def feature_status_handler(self, key, data):
-        status_data = self.config_db.get_table('FEATURE')
-        for key in status_data.keys():
-            if not key:
-                syslog.syslog(syslog.LOG_WARNING, "FEATURE key is missing")
-                return
-        status = status_data[key]['status']
-        if not status:
-            syslog.syslog(syslog.LOG_WARNING, "status is missing for {}".format(key))
+    def feature_state_handler(self, key, data):
+        feature_name = key
+        feature_table = self.config_db.get_table('FEATURE')
+        if feature_name not in feature_table.keys():
+            syslog.syslog(syslog.LOG_WARNING, "Feature '{}' not in FEATURE table".format(feature_name))
             return
-        if status == "enabled":
-            start_cmds=[]
-            start_cmds.append("sudo systemctl enable {}".format(key))
-            start_cmds.append("sudo systemctl start {}".format(key))
-            for cmd in start_cmds:
-                syslog.syslog(syslog.LOG_INFO, "Running cmd - {}".format(cmd))
-                try:
-                    subprocess.check_call(cmd, shell=True)
-                except subprocess.CalledProcessError as err:
-                    syslog.syslog(syslog.LOG_ERR, "{} - failed: return code - {}, output:\n{}"
-                              .format(err.cmd, err.returncode, err.output))
-                    return
-            syslog.syslog(syslog.LOG_INFO, "Feature '{}' is enabled and started".format(key))
-        elif status == "disabled":
-            stop_cmds=[]
-            stop_cmds.append("sudo systemctl stop {}".format(key))
-            stop_cmds.append("sudo systemctl disable {}".format(key))
-            for cmd in stop_cmds:
-                syslog.syslog(syslog.LOG_INFO, "Running cmd - {}".format(cmd))
-                try:
-                    subprocess.check_call(cmd, shell=True)
-                except subprocess.CalledProcessError as err:
-                    syslog.syslog(syslog.LOG_ERR, "{} - failed: return code - {}, output:\n{}"
-                              .format(err.cmd, err.returncode, err.output))
-                    return
-            syslog.syslog(syslog.LOG_INFO, "Feature '{}' is stopped and disabled".format(key))
-        else:
-            syslog.syslog(syslog.LOG_ERR, "Unexpected status value '{}' for '{}'".format(status, key))
+
+        state = feature_table[feature_name]['state']
+        if not state:
+            syslog.syslog(syslog.LOG_WARNING, "Enable state of feature '{}' is None".format(feature_name))
+            return
+
+        update_feature_state(feature_name, state)
 
     def start(self):
+        # Update all feature states once upon starting
+        self.update_all_feature_states()
+
         self.config_db.subscribe('AAA', lambda table, key, data: self.aaa_handler(key, data))
         self.config_db.subscribe('TACPLUS_SERVER', lambda table, key, data: self.tacacs_server_handler(key, data))
         self.config_db.subscribe('TACPLUS', lambda table, key, data: self.tacacs_global_handler(key, data))
         self.config_db.subscribe('LOOPBACK_INTERFACE', lambda table, key, data: self.lpbk_handler(key, data))
-        self.config_db.subscribe('FEATURE', lambda table, key, data: self.feature_status_handler(key, data))
+        self.config_db.subscribe('FEATURE', lambda table, key, data: self.feature_state_handler(key, data))
         self.config_db.listen()
 
 

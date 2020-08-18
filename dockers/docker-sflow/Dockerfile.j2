@@ -1,5 +1,5 @@
 {% from "dockers/dockerfile-macros.j2" import install_debian_packages, install_python_wheels, copy_files %}
-FROM docker-config-engine-stretch
+FROM docker-config-engine-buster
 
 ARG docker_container_name
 RUN [ -f /etc/rsyslog.conf ] && sed -ri "s/%syslogtag%/$docker_container_name#%syslogtag%/;" /etc/rsyslog.conf
@@ -11,6 +11,9 @@ RUN apt-get update      && \
     apt-get install -f -y  \
             dmidecode      \
             libmnl0=1.0.4-2
+
+RUN pip install \
+        pyroute2==0.5.3
 
 {% if docker_sflow_debs.strip() -%}
 # Copy locally-built Debian package dependencies
@@ -27,9 +30,9 @@ RUN apt-get clean -y      && \
 
 RUN sed -ri '/^DAEMON_ARGS=""/c DAEMON_ARGS="-c /var/log/hsflowd.crash"' /etc/init.d/hsflowd
 
-COPY ["start.sh", "/usr/bin/"]
 COPY ["supervisord.conf", "/etc/supervisor/conf.d/"]
 COPY ["files/supervisor-proc-exit-listener", "/usr/bin"]
 COPY ["critical_processes", "/etc/supervisor"]
+COPY ["port_index_mapper.py", "/usr/bin"]
 
 ENTRYPOINT ["/usr/bin/supervisord"]

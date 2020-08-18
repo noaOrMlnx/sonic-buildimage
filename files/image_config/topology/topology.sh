@@ -6,19 +6,20 @@
 #
 
 start() {
-	DB_FIRST_INSTANCE="/var/run/redis0/redis.sock"
-	TOPOLOGY_SCRIPT="topology.sh"
-	PLATFORM=`sonic-cfggen -H -v DEVICE_METADATA.localhost.platform -s $DB_FIRST_INSTANCE`
-	HWSKU=`sonic-cfggen -d -v 'DEVICE_METADATA["localhost"]["hwsku"]' -s $DB_FIRST_INSTANCE`
-        /usr/share/sonic/device/$PLATFORM/$HWSKU/$TOPOLOGY_SCRIPT start
+    TOPOLOGY_SCRIPT="topology.sh"
+    PLATFORM=${PLATFORM:-`sonic-cfggen -H -v DEVICE_METADATA.localhost.platform`}
+    HWSKU=${HWSKU:-`sonic-cfggen -d -v 'DEVICE_METADATA["localhost"]["hwsku"]'`}
+    /usr/share/sonic/device/$PLATFORM/$HWSKU/$TOPOLOGY_SCRIPT start
 }
 stop() {
-        DB_FIRST_INSTANCE="/var/run/redis0/redis.sock"
-        TOPOLOGY_SCRIPT="topology.sh"
-        PLATFORM=`sonic-cfggen -H -v DEVICE_METADATA.localhost.platform -s $DB_FIRST_INSTANCE`
-        HWSKU=`sonic-cfggen -d -v 'DEVICE_METADATA["localhost"]["hwsku"]' -s $DB_FIRST_INSTANCE`
-        /usr/share/sonic/device/$PLATFORM/$HWSKU/$TOPOLOGY_SCRIPT stop 
+    TOPOLOGY_SCRIPT="topology.sh"
+    PLATFORM=${PLATFORM:-`sonic-cfggen -H -v DEVICE_METADATA.localhost.platform`}
+    HWSKU=${HWSKU:-`sonic-cfggen -d -v 'DEVICE_METADATA["localhost"]["hwsku"]'`}
+    usr/share/sonic/device/$PLATFORM/$HWSKU/$TOPOLOGY_SCRIPT stop 
 }
+
+# read SONiC immutable variables
+[ -f /etc/sonic/sonic-environment ] && . /etc/sonic/sonic-environment
 
 case "$1" in
     start|stop)

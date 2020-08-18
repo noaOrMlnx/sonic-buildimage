@@ -113,6 +113,63 @@ switch_board_led_default() {
 	resource="/sys/bus/pci/devices/0000:04:00.0/resource0"
 	python /usr/bin/pcisysfs.py --set --offset 0x24 --val 0x194 --res $resource  > /dev/null 2>&1
 }
+
+# Readout firmware version of the system and
+# store in /var/log/firmware_versions
+platform_firmware_versions() {
+       FIRMWARE_VERSION_FILE=/var/log/firmware_versions
+       rm -rf ${FIRMWARE_VERSION_FILE}
+       echo "BIOS: `dmidecode -s system-version `" > $FIRMWARE_VERSION_FILE
+       ## Get FPGA version
+       r=`/usr/bin/pcisysfs.py  --get --offset 0x00 --res /sys/bus/pci/devices/0000\:04\:00.0/resource0 | sed  '1d; s/.*\(....\)$/\1/; s/\(..\{1\}\)/\1./'`
+       r_min=$(echo $r | sed 's/.*\(..\)$/0x\1/')
+       r_maj=$(echo $r | sed 's/^\(..\).*/0x\1/')
+       echo "FPGA: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+       ## Get BMC Firmware Revision
+       r=`cat /sys/class/ipmi/ipmi0/device/bmc/firmware_revision`
+       echo "BMC: $r" >> $FIRMWARE_VERSION_FILE
+
+       #System CPLD 0x31 on i2c bus 601 ( physical FPGA I2C-2)
+       r_min=`/usr/sbin/i2cget -y 601 0x31 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+       r_maj=`/usr/sbin/i2cget -y 601 0x31 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+       echo "System CPLD: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+       #Slave CPLD 1 0x30 on i2c bus 600 ( physical FPGA I2C-1)
+       r_min=`/usr/sbin/i2cget -y 600 0x30 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+       r_maj=`/usr/sbin/i2cget -y 600 0x30 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+       echo "Slave CPLD 1: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+       #Slave CPLD 2 0x31 on i2c bus 600 ( physical FPGA I2C-1)
+       r_min=`/usr/sbin/i2cget -y 600 0x31 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+       r_maj=`/usr/sbin/i2cget -y 600 0x31 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+       echo "Slave CPLD 2: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+       #Slave CPLD 3 0x32 on i2c bus 600 ( physical FPGA I2C-1)
+       r_min=`/usr/sbin/i2cget -y 600 0x32 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+       r_maj=`/usr/sbin/i2cget -y 600 0x32 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+       echo "Slave CPLD 3: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+
+       #Slave CPLD 3 0x32 on i2c bus 600 ( physical FPGA I2C-1)
+       r_min=`/usr/sbin/i2cget -y 600 0x33 0x0 | sed ' s/.*\(0x..\)$/\1/'`
+       r_maj=`/usr/sbin/i2cget -y 600 0x33 0x1 | sed ' s/.*\(0x..\)$/\1/'`
+       echo "Slave CPLD 4: $((r_maj)).$((r_min))" >> $FIRMWARE_VERSION_FILE
+}
+
+install_python_api_package() {
+    device="/usr/share/sonic/device"
+    platform=$(/usr/local/bin/sonic-cfggen -H -v DEVICE_METADATA.localhost.platform)
+
+    rv=$(pip install $device/$platform/sonic_platform-1.0-py2-none-any.whl)
+}
+
+remove_python_api_package() {
+    rv=$(pip show sonic-platform > /dev/null 2>/dev/null)
+    if [ $? -eq 0 ]; then
+        rv=$(pip uninstall -y sonic-platform > /dev/null 2>/dev/null)
+    fi
+}
+
 init_devnum
 
 if [ "$1" == "init" ]; then
@@ -128,15 +185,18 @@ if [ "$1" == "init" ]; then
     switch_board_sfp "new_device"
     switch_board_modsel
     switch_board_led_default
+    install_python_api_package
     python /usr/bin/qsfp_irq_enable.py
+    platform_firmware_versions
 
 elif [ "$1" == "deinit" ]; then
     sys_eeprom "delete_device"
     switch_board_qsfp "delete_device"
-    switch_board_qsfp_mux "delete_device"
     switch_board_sfp "delete_device"
+    switch_board_qsfp_mux "delete_device"
     modprobe -r i2c-mux-pca954x
     modprobe -r i2c-dev
+    remove_python_api_package   
 else
      echo "s5232f_platform : Invalid option !"
 fi

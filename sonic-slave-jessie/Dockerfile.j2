@@ -278,7 +278,7 @@ RUN apt-get -y build-dep linux
 {%- endif %}
 
 # For gobgp and telemetry build
-RUN export VERSION=1.11.5 \
+RUN export VERSION=1.14.2 \
 {%- if CONFIGURED_ARCH == "armhf" %}
  && wget https://storage.googleapis.com/golang/go$VERSION.linux-armv6l.tar.gz \
  && tar -C /usr/local -xzf go$VERSION.linux-armv6l.tar.gz \
@@ -311,7 +311,7 @@ RUN pip install --force-reinstall --upgrade "jinja2>=2.10"
 RUN pip install j2cli==0.3.10
 
 # For sonic utilities testing
-RUN pip install click-default-group click natsort tabulate netifaces==0.10.7 fastentrypoints
+RUN pip install click natsort tabulate netifaces==0.10.7 fastentrypoints
 
 # For supervisor build
 RUN pip install meld3 mock
@@ -323,6 +323,9 @@ RUN pip install pexpect==4.6.0
 RUN pip install mockredispy==2.9.3
 RUN pip install pytest-runner==4.4
 RUN pip install setuptools==40.8.0
+
+# For sonic-swss-common testing
+RUN pip install Pympler==0.8
 
 # Install dependencies for isc-dhcp-relay build
 RUN apt-get -y build-dep isc-dhcp
@@ -369,3 +372,6 @@ RUN echo "DOCKER_OPTS=\"--experimental --storage-driver=vfs\"" >> /etc/default/d
 RUN echo "deb [arch={{ CONFIGURED_ARCH }}] http://archive.debian.org/debian jessie-backports main" >> /etc/apt/sources.list
 RUN apt-get -o Acquire::Check-Valid-Until=false update
 RUN apt-get -y -o Acquire::Check-Valid-Until=false install ca-certificates-java=20161107~bpo8+1 openjdk-8-jdk
+
+# Install swi tools
+RUN python -m pip install git+https://github.com/aristanetworks/swi-tools.git@d51761ec0bb93c73039233f3c01ed48235ffad00

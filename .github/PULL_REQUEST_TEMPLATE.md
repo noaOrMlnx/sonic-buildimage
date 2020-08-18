@@ -1,20 +1,33 @@
 <!--
-Please make sure you've read and understood our contributing guidelines;
+Please make sure you've read and understood our contributing guidelines:
 https://github.com/Azure/SONiC/blob/gh-pages/CONTRIBUTING.md
 
 ** Make sure all your commits include a signature generated with `git commit -s` **
 
 If this is a bug fix, make sure your description includes "fixes #xxxx", or
-"closes #xxxx"
+"closes #xxxx" or "resolves #xxxx"
 
 Please provide the following information:
 -->
 
-**- What I did**
+**- Why I did it**
 
 **- How I did it**
 
 **- How to verify it**
+
+**- Which release branch to backport (provide reason below if selected)**
+
+<!--
+- Note we only backport fixes to a release branch, *not* features!
+- Please also provide a reason for the backporting below.
+- e.g.
+- [x] 202006
+-->
+
+- [ ] 201811
+- [ ] 201911
+- [ ] 202006
 
 **- Description for the changelog**
 <!--
