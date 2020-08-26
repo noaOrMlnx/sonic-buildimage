@@ -28,17 +28,6 @@ platform/*/docker-*/Dockerfile
 # Installer-related files and directories
 installer/x86_64/platforms/
 
-# Config engine
-src/sonic-config-engine/**/*.pyc
-src/sonic-config-engine/build
-src/sonic-config-engine/sonic_config_engine.egg-info
-
-src/sonic-py-common/**/*.pyc
-src/sonic-py-common/.eggs/
-src/sonic-py-common/build
-src/sonic-py-common/dist
-src/sonic-py-common/sonic_py_common.egg-info
-
 # Misc. files
 asic_config_checksum
 files/Aboot/boot0
@@ -71,3 +60,5 @@ platform/broadcom/sonic-platform-modules-dell/s6100/modules/dell_s6100_lpc.c
 platform/broadcom/sonic-platform-modules-dell/z9100/modules/dell_ich.c
 platform/broadcom/sonic-platform-modules-dell/z9100/modules/dell_mailbox.c
 platform/broadcom/sonic-platform-modules-dell/z9264f/sonic_platform/ipmihelper.py
+platform/vs/docker-sonic-vs/init_cfg.json
+platform/p4/docker-sonic-p4/init_cfg.json

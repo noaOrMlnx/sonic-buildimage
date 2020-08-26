@@ -125,6 +125,10 @@ INCLUDE_SFLOW = y
 # INCLUDE_MGMT_FRAMEWORK - build docker-sonic-mgmt-framework for CLI and REST server support
 INCLUDE_MGMT_FRAMEWORK = y
 
+# INCLUDE_HOST_SERVICE - build sonic-host-services for mgmt-framework and/or
+# telemetry containers to access host functionality
+INCLUDE_HOST_SERVICE = n
+
 # INCLUDE_RESTAPI - build docker-sonic-restapi for configuring the switch using REST APIs
 INCLUDE_RESTAPI = n
 
@@ -154,3 +158,6 @@ K8s_GCR_IO_PAUSE_VERSION = 3.2
 #     CA_CERT =
 # The relative path is build root folder.
 SONIC_ENABLE_IMAGE_SIGNATURE ?= n
+
+# ENABLE_SYNCHRONOUS_MODE - enable synchronous mode between orchagent and syncd
+ENABLE_SYNCHRONOUS_MODE = n

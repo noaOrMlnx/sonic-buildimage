@@ -123,11 +123,17 @@ def is_multi_asic():
 
 
 def get_asic_id_from_name(asic_name):
+    """
+    Get the asic id from the asic name for multi-asic platforms
+    In single ASIC platforms, it would fail and throw an exception.
 
+    Returns:
+        asic id.
+    """
     if asic_name.startswith(ASIC_NAME_PREFIX):
         return asic_name[len(ASIC_NAME_PREFIX):]
     else:
-        return None
+        raise ValueError('Unknown asic namespace name {}'.format(asic_name))
 
 
 def get_namespaces_from_linux():
@@ -135,9 +141,8 @@ def get_namespaces_from_linux():
     In a multi asic platform, each ASIC is in a Linux Namespace.
     This method returns list of all the Namespace present on the device
 
-    Note: It is preferable to use this function can be used only 
-    when the config_db is not available. 
-    When configdb is available use get_all_namespaces()
+    Note: It is preferable to use this function only when config_db is not
+    available. When configdb is available use get_all_namespaces()
 
     Returns:
         List of the namespaces present in the system
@@ -253,6 +258,17 @@ def is_port_internal(port_name, namespace=None):
     return False
 
 
+def get_external_ports(port_names, namespace=None):
+    external_ports = set()
+    ports_config = get_port_table(namespace)
+    for port in port_names:
+        if port in ports_config:
+            if (PORT_ROLE not in ports_config[port] or
+                    ports_config[port][PORT_ROLE] == EXTERNAL_PORT):
+                external_ports.add(port)
+    return external_ports
+
+
 def is_port_channel_internal(port_channel, namespace=None):
 
     if not is_multi_asic():
@@ -298,3 +314,33 @@ def is_bgp_session_internal(bgp_neigh_ip, namespace=None):
         else:
             return False
     return False
+
+def get_front_end_namespaces():
+    """
+    Get the namespaces in the platform. For multi-asic devices we get the namespaces
+    mapped to asic which have front-panel interfaces. For single ASIC device it is the
+    DEFAULT_NAMESPACE which maps to the linux host.
+
+    Returns:
+        a list of namespaces
+    """
+    namespaces = [DEFAULT_NAMESPACE]
+    if is_multi_asic():
+        ns_list = get_all_namespaces()
+        namespaces = ns_list['front_ns']
+
+    return namespaces
+
+
+def get_asic_index_from_namespace(namespace):
+    """
+    Get asic index from the namespace name.
+    With single ASIC platform, return asic_index 0, which is mapped to the only asic present.
+
+    Returns:
+        asic_index as an integer.
+    """
+    if is_multi_asic():
+        return int(get_asic_id_from_name(namespace))
+
+    return 0
