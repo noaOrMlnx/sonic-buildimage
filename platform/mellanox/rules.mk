@@ -7,6 +7,7 @@ include $(PLATFORM_PATH)/mlnx-platform-api.mk
 include $(PLATFORM_PATH)/docker-syncd-mlnx.mk
 include $(PLATFORM_PATH)/docker-syncd-mlnx-rpc.mk
 include $(PLATFORM_PATH)/docker-saiserver-mlnx.mk
+include $(PLATFORM_PATH)/mlnx-phy-debug-tools.mk
 include $(PLATFORM_PATH)/one-image.mk
 include $(PLATFORM_PATH)/libsaithrift-dev.mk
 include $(PLATFORM_PATH)/docker-ptf-mlnx.mk
