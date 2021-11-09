@@ -165,7 +165,6 @@ module sonic-copp {
 				}
 
 				leaf always_enabled {
-					mandatory false;
 					type string;
 					description "a field that indicates whether the trap should be always installed"
 				}
