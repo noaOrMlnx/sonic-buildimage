@@ -165,8 +165,8 @@ module sonic-copp {
 				}
 
 				leaf always_enabled {
-					type string;
-					description "a field that indicates whether the trap should be always installed"
+					type boolean;
+					description "field that indicates whether the trap should be always installed";
 				}
 			}
 			/* end of list COPP_TRAP_LIST */
