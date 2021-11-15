@@ -163,6 +163,11 @@ module sonic-copp {
 					}
 					description "reference to CoPP group";
 				}
+				
+				leaf always_enabled {
+					type boolean;
+					description "field that indicates whether the trap should be always installed";
+				}
 			}
 			/* end of list COPP_TRAP_LIST */
 		}
