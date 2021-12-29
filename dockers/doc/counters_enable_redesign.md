@@ -42,17 +42,25 @@ When system is up after reboot, the new daemon will be created and do the follow
     { port: [admin_status, oper_status] }
     for all ports received from config_db. oper_status will be initialized as an empty string.
 
-- Initialize an internal counter with 0.
 
-- Start listen to events from APP DB, PORT_TABLE, LAG_MEMBER_TABLE.
+- Start listen to events from APP DB, PORT_TABLE, LAG_TABLE.
 
     For each event arriving:
     - If Port table doesn't have "PortConfigDone" key, delete the event and continue to the next one.
     - If the current oper_status of the port equals to the expected, remove the port from the list.
 
+- In order to handle changes of changing port's state, or using DPC capabilities,
 
-    Eventually, when the list is empty, enable the counters.
+    listen to events from config_db, PORT & PORTCHANNEL tables.
+    for each event arriving:
+    - If a port state has been changed, change it in the internal data structure.
+    - If a port/portchannel was added, add it to the internal data structure with the status.
+    - If a port/portchannel was deleted, remove it from the internal data structure.
+    - If a delete operation was performed to one of the ports inside the internal data structure - remove the port.
+
+Eventually, when the list is empty, enable the counters.
 
 
 NOTE: The daemon will also start a timer in order to be able to enable counters even if one of the ports is not stable.
 If after 3 minutes (180 seconds), the counters were not enabled yet, enable counters.
+The timer will be running in a thread.
