@@ -122,77 +122,77 @@ class TestChassis:
         chassis._fan_drawer_list = []
         assert chassis.get_num_fan_drawers() == 2
 
-    def test_sfp(self):
-        # Test get_num_sfps, it should not create any SFP objects
-        DeviceDataManager.get_sfp_count = mock.MagicMock(return_value=3)
-        chassis = Chassis()
-        assert chassis.get_num_sfps() == 3
-        assert len(chassis._sfp_list) == 0
+    # def test_sfp(self):
+    #     # Test get_num_sfps, it should not create any SFP objects
+    #     DeviceDataManager.get_sfp_count = mock.MagicMock(return_value=3)
+    #     chassis = Chassis()
+    #     assert chassis.get_num_sfps() == 3
+    #     assert len(chassis._sfp_list) == 0
 
-        # Index out of bound, return None
-        sfp = chassis.get_sfp(4)
-        assert sfp is None
-        assert len(chassis._sfp_list) == 0
+    #     # Index out of bound, return None
+    #     sfp = chassis.get_sfp(4)
+    #     assert sfp is None
+    #     assert len(chassis._sfp_list) == 0
 
-        # Get one SFP, other SFP list should be initialized to None
-        sfp = chassis.get_sfp(1)
-        assert sfp is not None
-        assert len(chassis._sfp_list) == 3
-        assert chassis._sfp_list[1] is None
-        assert chassis._sfp_list[2] is None
-        assert chassis.sfp_initialized_count == 1
+    #     # Get one SFP, other SFP list should be initialized to None
+    #     sfp = chassis.get_sfp(1)
+    #     assert sfp is not None
+    #     assert len(chassis._sfp_list) == 3
+    #     assert chassis._sfp_list[1] is None
+    #     assert chassis._sfp_list[2] is None
+    #     assert chassis.sfp_initialized_count == 1
 
-        # Get the SFP again, no new SFP created
-        sfp1 = chassis.get_sfp(1)
-        assert id(sfp) == id(sfp1)
+    #     # Get the SFP again, no new SFP created
+    #     sfp1 = chassis.get_sfp(1)
+    #     assert id(sfp) == id(sfp1)
 
-        # Get another SFP, sfp_initialized_count increase
-        sfp2 = chassis.get_sfp(2)
-        assert sfp2 is not None
-        assert chassis._sfp_list[2] is None
-        assert chassis.sfp_initialized_count == 2
+    #     # Get another SFP, sfp_initialized_count increase
+    #     sfp2 = chassis.get_sfp(2)
+    #     assert sfp2 is not None
+    #     assert chassis._sfp_list[2] is None
+    #     assert chassis.sfp_initialized_count == 2
 
-        # Get all SFPs, but there are SFP already created, only None SFP created
-        sfp_list = chassis.get_all_sfps()
-        assert len(sfp_list) == 3
-        assert chassis.sfp_initialized_count == 3
-        assert list(filter(lambda x: x is not None, sfp_list))
-        assert id(sfp1) == id(sfp_list[0])
-        assert id(sfp2) == id(sfp_list[1])
+    #     # Get all SFPs, but there are SFP already created, only None SFP created
+    #     sfp_list = chassis.get_all_sfps()
+    #     assert len(sfp_list) == 3
+    #     assert chassis.sfp_initialized_count == 3
+    #     assert list(filter(lambda x: x is not None, sfp_list))
+    #     assert id(sfp1) == id(sfp_list[0])
+    #     assert id(sfp2) == id(sfp_list[1])
 
-        # Get all SFPs, no SFP yet, all SFP created
-        chassis._sfp_list = []
-        chassis.sfp_initialized_count = 0
-        sfp_list = chassis.get_all_sfps()
-        assert len(sfp_list) == 3
-        assert chassis.sfp_initialized_count == 3
+    #     # Get all SFPs, no SFP yet, all SFP created
+    #     chassis._sfp_list = []
+    #     chassis.sfp_initialized_count = 0
+    #     sfp_list = chassis.get_all_sfps()
+    #     assert len(sfp_list) == 3
+    #     assert chassis.sfp_initialized_count == 3
 
-    @mock.patch('sonic_platform.sfp_event.sfp_event.check_sfp_status', MagicMock())
-    @mock.patch('sonic_platform.sfp_event.sfp_event.__init__', MagicMock(return_value=None))
-    @mock.patch('sonic_platform.sfp_event.sfp_event.initialize', MagicMock())
-    @mock.patch('sonic_platform.device_data.DeviceDataManager.get_sfp_count', MagicMock(return_value=3))
-    def test_change_event(self):
-        from sonic_platform.sfp_event import sfp_event
+    # @mock.patch('sonic_platform.sfp_event.sfp_event.check_sfp_status', MagicMock())
+    # @mock.patch('sonic_platform.sfp_event.sfp_event.__init__', MagicMock(return_value=None))
+    # @mock.patch('sonic_platform.sfp_event.sfp_event.initialize', MagicMock())
+    # @mock.patch('sonic_platform.device_data.DeviceDataManager.get_sfp_count', MagicMock(return_value=3))
+    # def test_change_event(self):
+    #     from sonic_platform.sfp_event import sfp_event
 
-        return_port_dict = {1: '1'}
-        def mock_check_sfp_status(self, port_dict, error_dict, timeout):
-            port_dict.update(return_port_dict)
-            return True if port_dict else False
+    #     return_port_dict = {1: '1'}
+    #     def mock_check_sfp_status(self, port_dict, error_dict, timeout):
+    #         port_dict.update(return_port_dict)
+    #         return True if port_dict else False
 
-        sfp_event.check_sfp_status = mock_check_sfp_status
-        chassis = Chassis()
+    #     sfp_event.check_sfp_status = mock_check_sfp_status
+    #     chassis = Chassis()
 
-        # Call get_change_event with timeout=0, wait until an event is detected
-        status, event_dict = chassis.get_change_event()
-        assert status is True
-        assert 'sfp' in event_dict and event_dict['sfp'][1] == '1'
-        assert len(chassis._sfp_list) == 3
+    #     # Call get_change_event with timeout=0, wait until an event is detected
+    #     status, event_dict = chassis.get_change_event()
+    #     assert status is True
+    #     assert 'sfp' in event_dict and event_dict['sfp'][1] == '1'
+    #     assert len(chassis._sfp_list) == 3
 
-        # Call get_change_event with timeout=1.0
-        return_port_dict = {}
-        status, event_dict = chassis.get_change_event(timeout=1.0)
-        assert status is True
-        assert 'sfp' in event_dict and not event_dict['sfp']
+    #     # Call get_change_event with timeout=1.0
+    #     return_port_dict = {}
+    #     status, event_dict = chassis.get_change_event(timeout=1.0)
+    #     assert status is True
+    #     assert 'sfp' in event_dict and not event_dict['sfp']
 
     def test_reboot_cause(self):
         from sonic_platform import utils

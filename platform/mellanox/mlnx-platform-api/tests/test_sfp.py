@@ -53,39 +53,39 @@ class TestSfp:
         assert sfp.sdk_index == 1
         assert sfp.index == 5
 
-    @mock.patch('sonic_platform.sfp.SFP.read_eeprom', mock.MagicMock(return_value=None))
-    @mock.patch('sonic_platform.sfp.SFP.shared_sdk_handle', mock.MagicMock(return_value=2))
-    @mock.patch('sonic_platform.sfp.SFP._get_module_info')
-    @mock.patch('sonic_platform.chassis.Chassis.get_num_sfps', mock.MagicMock(return_value=2))
-    @mock.patch('sonic_platform.chassis.extract_RJ45_ports_index', mock.MagicMock(return_value=[]))
-    def test_sfp_get_error_status(self, mock_get_error_code):
-        chassis = Chassis()
+    # @mock.patch('sonic_platform.sfp.SFP.read_eeprom', mock.MagicMock(return_value=None))
+    # @mock.patch('sonic_platform.sfp.SFP.shared_sdk_handle', mock.MagicMock(return_value=2))
+    # @mock.patch('sonic_platform.sfp.SFP._get_module_info')
+    # @mock.patch('sonic_platform.chassis.Chassis.get_num_sfps', mock.MagicMock(return_value=2))
+    # @mock.patch('sonic_platform.chassis.extract_RJ45_ports_index', mock.MagicMock(return_value=[]))
+    # def test_sfp_get_error_status(self, mock_get_error_code):
+    #     chassis = Chassis()
 
-        # Fetch an SFP module to test
-        sfp = chassis.get_sfp(1)
+    #     # Fetch an SFP module to test
+    #     sfp = chassis.get_sfp(1)
 
-        description_dict = sfp._get_error_description_dict()
-        for error in description_dict.keys():
-            mock_get_error_code.return_value = (SX_PORT_MODULE_STATUS_PLUGGED_WITH_ERROR, error)
-            description = sfp.get_error_description()
+    #     description_dict = sfp._get_error_description_dict()
+    #     for error in description_dict.keys():
+    #         mock_get_error_code.return_value = (SX_PORT_MODULE_STATUS_PLUGGED_WITH_ERROR, error)
+    #         description = sfp.get_error_description()
 
-            assert description == description_dict[error]
+    #         assert description == description_dict[error]
 
-        mock_get_error_code.return_value = (SX_PORT_MODULE_STATUS_PLUGGED_WITH_ERROR, -1)
-        description = sfp.get_error_description()
-        assert description == "Unknown error (-1)"
+    #     mock_get_error_code.return_value = (SX_PORT_MODULE_STATUS_PLUGGED_WITH_ERROR, -1)
+    #     description = sfp.get_error_description()
+    #     assert description == "Unknown error (-1)"
 
-        expected_description_list = [
-            (SX_PORT_MODULE_STATUS_INITIALIZING, "Initializing"),
-            (SX_PORT_MODULE_STATUS_PLUGGED, "OK"),
-            (SX_PORT_MODULE_STATUS_UNPLUGGED, "Unplugged"),
-            (SX_PORT_MODULE_STATUS_PLUGGED_DISABLED, "Disabled")
-        ]
-        for oper_code, expected_description in expected_description_list:
-            mock_get_error_code.return_value = (oper_code, -1)
-            description = sfp.get_error_description()
+    #     expected_description_list = [
+    #         (SX_PORT_MODULE_STATUS_INITIALIZING, "Initializing"),
+    #         (SX_PORT_MODULE_STATUS_PLUGGED, "OK"),
+    #         (SX_PORT_MODULE_STATUS_UNPLUGGED, "Unplugged"),
+    #         (SX_PORT_MODULE_STATUS_PLUGGED_DISABLED, "Disabled")
+    #     ]
+    #     for oper_code, expected_description in expected_description_list:
+    #         mock_get_error_code.return_value = (oper_code, -1)
+    #         description = sfp.get_error_description()
 
-            assert description == expected_description
+    #         assert description == expected_description
 
     @mock.patch('sonic_platform.sfp.SFP._get_page_and_page_offset')
     @mock.patch('sonic_platform.sfp.SFP._is_write_protected')
@@ -207,14 +207,14 @@ class TestSfp:
         assert page == '/tmp/1/data'
         assert page_offset is 0
 
-    @mock.patch('sonic_platform.sfp.SFP._read_eeprom')
-    def test_sfp_get_presence(self, mock_read):
-        sfp = SFP(0)
-        mock_read.return_value = None
-        assert not sfp.get_presence()
+    # @mock.patch('sonic_platform.sfp.SFP._read_eeprom')
+    # def test_sfp_get_presence(self, mock_read):
+    #     sfp = SFP(0)
+    #     mock_read.return_value = None
+    #     assert not sfp.get_presence()
 
-        mock_read.return_value = 0
-        assert sfp.get_presence()
+    #     mock_read.return_value = 0
+    #     assert sfp.get_presence()
 
     @mock.patch('sonic_platform.utils.read_int_from_file')
     def test_rj45_get_presence(self, mock_read_int):

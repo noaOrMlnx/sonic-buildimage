@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-MLNX_SDK_VERSION = 4.5.5142
+MLNX_SDK_VERSION = 4.6.1944-002
 MLNX_SDK_ISSU_VERSION = 101
 
 MLNX_SDK_DRIVERS_GITHUB_URL = https://github.com/Mellanox/Spectrum-SDK-Drivers
@@ -24,7 +24,7 @@ MLNX_SDK_ASSETS_URL = $(MLNX_ASSETS_GITHUB_URL)/releases/download/$(MLNX_SDK_ASS
 MLNX_SDK_DEB_VERSION = $(subst -,.,$(subst _,.,$(MLNX_SDK_VERSION)))
 
 # Place here URL where SDK sources exist
-MLNX_SDK_SOURCE_BASE_URL =
+MLNX_SDK_SOURCE_BASE_URL = http://fit69.mtl.labs.mlnx/auto/sw_system_release/sx_sdk_eth/sx_sdk_eth-4.6.1944-002/SOURCES/
 
 ifneq ($(MLNX_SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
