@@ -620,10 +620,6 @@ class ModulesMgmtTask(threading.Thread):
             time.sleep(1)
             i += 1
 
-    #def get_sysfs_ethernet_port_fd(self, sysfs_fd, port):
-    #    sysfs_eth_port_fd = '/'.join([sysfs_fd, "Ethernet{}".format(port * PORT_BREAKOUT)])
-    #    return sysfs_eth_port_fd
-
     def get_sysfs_ethernet_port_fd(self, sysfs_fd, port):
         sysfs_eth_port_fd = sysfs_fd.format(port)
         return sysfs_eth_port_fd
