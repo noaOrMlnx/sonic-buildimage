@@ -687,6 +687,12 @@ class SFP(NvidiaSFPCommon):
         Returns:
             The error description
         """
+        try:
+            if self.is_sw_control():
+                return 'Not supported'
+        except:
+            return self.SFP_STATUS_INITIALIZING
+
         oper_status, error_code = self._get_module_info(self.sdk_index)
         if oper_status == SX_PORT_MODULE_STATUS_INITIALIZING:
             error_description = self.SFP_STATUS_INITIALIZING
@@ -923,9 +929,6 @@ class SFP(NvidiaSFPCommon):
 
         db = utils.DbUtils.get_db_instance('STATE_DB')
         control_type = db.get('STATE_DB', f'TRANSCEIVER_MODULES_MGMT|{self.sdk_index}', 'control_type')
-        if not control_type:
-            raise Exception(f'Module {self.sdk_index} is in initialization, please retry later')
-
         control_file_value = utils.read_int_from_file(f'/sys/module/sx_core/asic0/module{self.sdk_index}/control')
 
         if control_type == 'SW_CONTROL' and control_file_value == 1:
