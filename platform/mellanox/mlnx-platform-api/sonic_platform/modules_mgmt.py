@@ -439,20 +439,7 @@ class ModulesMgmtTask(threading.Thread):
                     logger.log_info(f'check_if_power_on port {port} is not powered')
                     return STATE_NOT_POWERED
                 elif 1 == val_int:
-                    if not module_sm_obj.wait_for_power_on and \
-                            utils.read_int_from_file(SYSFS_INDEPENDENT_FD_HW_RESET.format(port)) == 1:
-                        sfp = sfp_module.SFP(port)
-                        xcvr_api = sfp.get_xcvr_api()
-                        # only if xcvr_api is None or if it is not active optics cables need reset
-                        if not xcvr_api or xcvr_api.is_flat_memory():
-                            logger.log_info(f'check_if_power_on port {port} is powered, but need reset')
-                            utils.write_file(SYSFS_INDEPENDENT_FD_HW_RESET.format(port), 1)
-                            utils.write_file(SYSFS_INDEPENDENT_FD_HW_RESET.format(port), 0)
-                            module_sm_obj.reset_start_time = time.time()
-                            module_sm_obj.wait_for_power_on = True
-                            self.waiting_modules_list.add(module_sm_obj.port_num)
-                            return STATE_NOT_POWERED
-                    logger.log_info(f'check_if_power_on port {port} is powered, does not need reset')
+                    logger.log_info(f'check_if_power_on port {port} is powered')
                     return STATE_POWERED
             except Exception as e:
                 logger.log_info(f'check_if_power_on got exception {e}')
