@@ -76,7 +76,6 @@ def check_media_dict(vendor_dict):
                         return False
     return True
 
-
 def check_valid_port(port_name):
     try:
         val = int(port_name.strip())
