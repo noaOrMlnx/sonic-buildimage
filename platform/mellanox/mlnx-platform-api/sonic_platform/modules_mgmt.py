@@ -46,6 +46,7 @@ SYSFS_INDEPENDENT_FD_POWER_LIMIT = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "po
 SYSFS_INDEPENDENT_FD_FW_CONTROL = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "control")
 # echo <val>  /sys/module/sx_core/$asic/$module/frequency   //  val: 0 - up to 400KHz, 1 - up to 1MHz
 SYSFS_INDEPENDENT_FD_FREQ = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "frequency")
+SYSFS_INDEPENDENT_FD_FREQ_SUPPORT = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "frequency_support")
 IS_INDEPENDENT_MODULE = 'is_independent_module'
 
 class ModulesMgmtTask(threading.Thread):
@@ -55,8 +56,6 @@ class ModulesMgmtTask(threading.Thread):
         threading.Thread.__init__(self)
         self.name = "ModulesMgmtTask"
         self.main_thread_stop_event = main_thread_stop_event
-        self.sfp_error_dict = {}
-        self.sfp_insert_events = {}
         self.sfp_port_dict_initial = {}
         self.sfp_port_dict = {}
         self.sfp_changes_dict = {}
@@ -455,17 +454,12 @@ class ModulesMgmtTask(threading.Thread):
                 if os.path.isfile(module_fd_indep_path_po):
                     logger.log_info("powerOnModule powering on via {} for port {}".format(module_fd_indep_path_po, port))
                     # echo 1 > /sys/module/sx_core/$asic/$module/power_on
-                    with open(module_fd_indep_path_po, "w") as module_fd:
-                        utils.write_file(module_fd, "1")
+                    utils.write_file(module_fd_indep_path_po, "1")
                 if os.path.isfile(module_fd_indep_path_r):
                     logger.log_info("powerOnModule resetting via {} for port {}".format(module_fd_indep_path_r, port))
                     # echo 0 > /sys/module/sx_core/$asic/$module/hw_reset
-                    with open(module_fd_indep_path_r, "w") as module_fd:
-                        utils.write_file(module_fd, "0")
-                module_sm_obj.reset_start_time = time.time()
-                module_sm_obj.wait_for_power_on = True
-                self.waiting_modules_list.append(module_sm_obj)
-
+                    utils.write_file(module_fd_indep_path_r, "0")
+                self.add_port_to_wait_reset(module_sm_obj)
             except Exception as e:
                 logger.log_info("exception in powerOnModule {} for port {}".format(e, port))
                 return STATE_HW_NOT_PRESENT
@@ -524,19 +518,23 @@ class ModulesMgmtTask(threading.Thread):
                 module_sm_obj.set_final_state(STATE_POWER_LIMIT_ERROR)
                 return STATE_POWER_LIMIT_ERROR
             else:
-                # read the module maximum supported clock of Management Comm Interface (MCI) from module EEPROM.
-                # from byte 2 bits 3-2:
-                # 00b means module supports up to 400KHz
-                # 01b means module supports up to 1MHz
-                logger.log_info(f"check_module_type reading mci max frequency for port {port}")
-                read_mci = xcvr_api.xcvr_eeprom.read_raw(2, 1)
-                logger.log_info(f"check_module_type read mci max frequency {read_mci} for port {port}")
-                mci_bits = read_mci & 0b00001100
-                logger.log_info(f"check_module_type read mci max frequency bits {mci_bits} for port {port}")
-                # Then, set it to frequency Sysfs using:
-                # echo <val> > /sys/module/sx_core/$asic/$module/frequency //  val: 0 - up to 400KHz, 1 - up to 1MHz
-                indep_fd_freq = SYSFS_INDEPENDENT_FD_FREQ.format(port)
-                utils.write_file(indep_fd_freq, mci_bits)
+                # first read the frequency support - if it's 1 then continue, if it's 0 no need to do anything
+                module_fd_freq_support_path = SYSFS_INDEPENDENT_FD_FREQ_SUPPORT.format(port)
+                val_int = utils.read_int_from_file(module_fd_freq_support_path)
+                if 1 == val_int:
+                    # read the module maximum supported clock of Management Comm Interface (MCI) from module EEPROM.
+                    # from byte 2 bits 3-2:
+                    # 00b means module supports up to 400KHz
+                    # 01b means module supports up to 1MHz
+                    logger.log_info(f"check_module_type reading mci max frequency for port {port}")
+                    read_mci = xcvr_api.xcvr_eeprom.read_raw(2, 1)
+                    logger.log_info(f"check_module_type read mci max frequency {read_mci} for port {port}")
+                    mci_bits = read_mci & 0b00001100
+                    logger.log_info(f"check_module_type read mci max frequency bits {mci_bits} for port {port}")
+                    # Then, set it to frequency Sysfs using:
+                    # echo <val> > /sys/module/sx_core/$asic/$module/frequency //  val: 0 - up to 400KHz, 1 - up to 1MHz
+                    indep_fd_freq = SYSFS_INDEPENDENT_FD_FREQ.format(port)
+                    utils.write_file(indep_fd_freq, mci_bits)
                 return STATE_SW_CONTROL
 
     def check_power_cap(self, port, module_sm_obj, dynamic=False):
@@ -568,9 +566,10 @@ class ModulesMgmtTask(threading.Thread):
         if state == STATE_FW_CONTROL:
             #"echo 0 > /sys/module/sx_core/$asic/$module/control"
             indep_fd_fw_control = SYSFS_INDEPENDENT_FD_FW_CONTROL.format(port)
-            with open(indep_fd_fw_control, "w") as fw_control_fd:
-                fw_control_fd.write("0")
+            utils.write_file(indep_fd_fw_control, "0")
             logger.log_info("save_module_control_mode set FW control for state {} port {}".format(state, port))
+            # update the presence sysfs fd to legacy FD presence, first close the previous fd
+            os.close(module_sm_obj.module_fd.fileno())
             module_fd_legacy_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
             module_sm_obj.set_module_fd_path(module_fd_legacy_path)
             module_fd = open(module_fd_legacy_path, "r")
@@ -614,7 +613,7 @@ class ModulesMgmtTask(threading.Thread):
                         logger.log_info("timerTask module port {} adding to delete list to remove from waiting_modules_list".format(module.port_num))
                         port_list_to_delete.append(module.port_num)
             logger.log_info("timerTask deleting ports {} from waiting_modules_list...".format(port_list_to_delete))
-            for port in port_list_to_delete:            
+            for port in port_list_to_delete:
                 logger.log_info("timerTask deleting port {} from waiting_modules_list".format(port))
                 self.waiting_modules_list.remove(port)
             logger.log_info("timerTask waiting_modules_list after deletion: {}".format(self.waiting_modules_list))
@@ -649,7 +648,7 @@ class ModulesMgmtTask(threading.Thread):
                     ctrl_type_db_value = '0'
                 else:
                     ctrl_type_db_value = '1'
-                self.sfp_changes_dict[str(module_obj.port_num)] = ctrl_type_db_value
+                self.sfp_changes_dict[str(module_obj.port_num + 1)] = ctrl_type_db_value
                 if final_state in [STATE_SW_CONTROL, STATE_FW_CONTROL]:
                     namespaces = multi_asic.get_front_end_namespaces()
                     for namespace in namespaces:

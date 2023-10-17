@@ -373,7 +373,7 @@ class Chassis(ChassisBase):
 
         Args:
             timeout: Timeout in milliseconds (optional). If timeout == 0,
-                this method will block until a change is detected. - Deprecated
+                this method will block until a change is detected.
 
         Returns:
             (bool, dict):
@@ -415,7 +415,10 @@ class Chassis(ChassisBase):
                 result_dict = {'sfp': port_dict}
                 result_dict['sfp_error'] = error_dict
                 return True, result_dict
-            time.sleep(1)
+            else:
+                elapse = time.time() - begin
+                if elapse >= timeout:
+                    return True, {'sfp': {}}
             i += 1
 
     def reinit_sfps(self, port_dict):
@@ -428,7 +431,7 @@ class Chassis(ChassisBase):
         for index, status in port_dict.items():
             if status == sfp.SFP_STATUS_INSERTED:
                 try:
-                    self._sfp_list[index - 1].reinit()
+                    self._sfp_list[int(index) - 1].reinit()
                 except Exception as e:
                     logger.log_error("Fail to re-initialize SFP {} - {}".format(index, repr(e)))
 
