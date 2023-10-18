@@ -49,20 +49,20 @@ def check_media_dict(vendor_dict):
             print("Expecting settings for vendor type " + vendor_key)
             return False
 
-        lane_speed_heirarchy_exists = None
+        lane_speed_hierarchy_exists = None
 
         for value_key in value_dict:
             if value_key.startswith(lane_speed_key_prefix):
-                if lane_speed_heirarchy_exists == False:
-                    print("Inconsistent lane speed heirarchy levels for the same entry")
+                if lane_speed_hierarchy_exists == False:
+                    print("Inconsistent lane speed hierarchy levels for the same entry")
                     return False
-                lane_speed_heirarchy_exists = True
+                lane_speed_hierarchy_exists = True
                 settings_dict = value_dict[value_key]
             else:
-                if lane_speed_heirarchy_exists == True:
-                    print("Inconsistent lane speed heirarchy levels for the same entry")
+                if lane_speed_hierarchy_exists == True:
+                    print("Inconsistent lane speed hierarchy levels for the same entry")
                     return False
-                lane_speed_heirarchy_exists = False
+                lane_speed_hierarchy_exists = False
                 settings_dict = value_dict
 
             for settings_key in settings_dict:
