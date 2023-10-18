@@ -2,7 +2,7 @@
     "GLOBAL_MEDIA_SETTINGS": {
         "0-31": {
             "QSFP28-40GBASE-CR4-3M": {
-                "speed:400G-GAUI-4": {
+                "speed:200G-GAUI-8": {
                     "main": {
                         "lane0": "0x00000088",
                         "lane1": "0x00000088",
