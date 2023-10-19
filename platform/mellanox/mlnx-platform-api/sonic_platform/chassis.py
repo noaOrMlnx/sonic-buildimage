@@ -396,7 +396,7 @@ class Chassis(ChassisBase):
             self.modules_mgmt_thread.start()
         self.initialize_sfp()
         wait_for_ever = (timeout == 0)
-        # select timeout should be no more than 1000ms to ensure fast shutdown flow
+        # poll timeout should be no more than 1000ms to ensure fast shutdown flow
         timeout = 1000.0 if timeout >= 1000 else float(timeout)
         port_dict = {}
         error_dict = {}
@@ -405,8 +405,8 @@ class Chassis(ChassisBase):
         while True:
             try:
                 logger.log_info(f'get_change_event() trying to get changes from queue on iteration {i}')
-                port_dict = self.modules_changes_queue.get(timeout=timeout)
-                logger.log_info (f'get_change_event() iteration {i} port_dict: {port_dict}')
+                port_dict = self.modules_changes_queue.get(timeout=timeout / 1000)
+                logger.log_info(f'get_change_event() iteration {i} port_dict: {port_dict}')
             except queue.Empty:
                 logger.log_info(f"failed to get item from modules changes queue on itertaion {i}")
 
@@ -416,9 +416,10 @@ class Chassis(ChassisBase):
                 result_dict['sfp_error'] = error_dict
                 return True, result_dict
             else:
-                elapse = time.time() - begin
-                if elapse >= timeout:
-                    return True, {'sfp': {}}
+                if not wait_for_ever:
+                    elapse = time.time() - begin
+                    if elapse >= timeout:
+                        return True, {'sfp': {}}
             i += 1
 
     def reinit_sfps(self, port_dict):

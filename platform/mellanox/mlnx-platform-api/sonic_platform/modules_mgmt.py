@@ -50,7 +50,6 @@ SYSFS_INDEPENDENT_FD_FREQ_SUPPORT = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "f
 IS_INDEPENDENT_MODULE = 'is_independent_module'
 
 class ModulesMgmtTask(threading.Thread):
-    RETRY_EEPROM_READING_INTERVAL = 60
 
     def __init__(self, namespaces=None, main_thread_stop_event=None, q=None):
         threading.Thread.__init__(self)
@@ -503,8 +502,7 @@ class ModulesMgmtTask(threading.Thread):
         if module_type not in [24, 25]:
             logger.log_info("check_module_type setting STATE_FW_CONTROL for {} in check_module_type port {} module_sm_obj {}"
                             .format(module_type, port, module_sm_obj))
-            module_sm_obj.set_final_state = STATE_FW_CONTROL
-            power_cap = self.checkPowerCapNonCMIS(port, module_sm_obj)
+            module_sm_obj.set_final_state(STATE_FW_CONTROL)
             return STATE_FW_CONTROL
         else:
             if xcvr_api.is_flat_memory():
@@ -539,7 +537,6 @@ class ModulesMgmtTask(threading.Thread):
 
     def check_power_cap(self, port, module_sm_obj, dynamic=False):
         logger.log_info("enter check_power_cap port {} module_sm_obj {}".format(port, module_sm_obj))
-        #sfp_base_module = SfpBase()
         sfp = sfp_module.SFP(port)
         xcvr_api = sfp.get_xcvr_api()
         field = xcvr_api.xcvr_eeprom.mem_map.get_field(consts.MAX_POWER_FIELD)
@@ -548,8 +545,6 @@ class ModulesMgmtTask(threading.Thread):
         powercap = int.from_bytes(powercap_ba, "big")
         logger.log_info("check_power_cap got powercap {} for port {} module_sm_obj {}".format(powercap, port, module_sm_obj))
         indep_fd_power_limit = self.get_sysfs_ethernet_port_fd(SYSFS_INDEPENDENT_FD_POWER_LIMIT, port)
-        #with open(indep_fd_power_limit, "r") as power_limit_fd:
-        #    cage_power_limit = power_limit_fd.read()
         cage_power_limit = utils.read_int_from_file(indep_fd_power_limit)
         logger.log_info("check_power_cap got cage_power_limit {} for port {} module_sm_obj {}".format(cage_power_limit, port, module_sm_obj))
         if powercap > int(cage_power_limit):
@@ -559,12 +554,10 @@ class ModulesMgmtTask(threading.Thread):
 
     def save_module_control_mode(self, port, module_sm_obj, dynamic=False):
         logger.log_info("save_module_control_mode setting current state {} for port {} as final state".format(module_sm_obj.get_current_state(), port))
-        # bug - need to find root cause and fix
-        #module_sm_obj.set_final_state(module_sm_obj.get_current_state())
         state = module_sm_obj.get_current_state()
         module_sm_obj.final_state = state
         if state == STATE_FW_CONTROL:
-            #"echo 0 > /sys/module/sx_core/$asic/$module/control"
+            # echo 0 > /sys/module/sx_core/$asic/$module/control
             indep_fd_fw_control = SYSFS_INDEPENDENT_FD_FW_CONTROL.format(port)
             utils.write_file(indep_fd_fw_control, "0")
             logger.log_info("save_module_control_mode set FW control for state {} port {}".format(state, port))
@@ -714,7 +707,7 @@ class ModuleStateMachine(object):
     def __init__(self, port_num=0, initial_state=STATE_HW_NOT_PRESENT, current_state=STATE_HW_NOT_PRESENT
                  , next_state=STATE_HW_NOT_PRESENT, final_state='', is_indep_module=False
                  , module_fd_path='', module_fd=None, reset_start_time=None
-                 , eeprom_poweron_reset_retries=1):
+                 , eeprom_poweron_reset_retries=1, module_power_good_fd_path=None, module_power_good_fd=None):
 
         self.port_num = port_num
         self.initial_state = initial_state
@@ -726,6 +719,9 @@ class ModuleStateMachine(object):
         self.module_fd = module_fd
         self.reset_start_time = reset_start_time
         self.wait_for_power_on = False
+        self.eeprom_poweron_reset_retries = eeprom_poweron_reset_retries
+        self.module_power_good_fd_path = module_power_good_fd_path
+        self.module_power_good_fd = module_power_good_fd
 
     def set_initial_state(self, state):
         self.initial_state = state
@@ -770,3 +766,5 @@ class ModuleStateMachine(object):
         self.final_state = ''
         self.wait_for_power_on = False
         self.eeprom_poweron_reset_retries = retries
+        os.close(self.module_fd.fileno())
+        os.close(self.module_power_good_fd.fileno())
