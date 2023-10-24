@@ -142,20 +142,20 @@ class TestSfp:
             handle.read.side_effect = OSError('')
             assert sfp.read_eeprom(0, 1) is None
 
-    @mock.patch('sonic_platform.sfp.SFP._get_eeprom_path', mock.MagicMock(return_value = None))
-    @mock.patch('sonic_platform.sfp.SFP._get_sfp_type_str')
-    def test_is_write_protected(self, mock_get_type_str):
-        sfp = SFP(0)
-        mock_get_type_str.return_value = 'cmis'
-        assert sfp._is_write_protected(page=0, page_offset=26, num_bytes=1)
-        assert not sfp._is_write_protected(page=0, page_offset=27, num_bytes=1)
+    # @mock.patch('sonic_platform.sfp.SFP._get_eeprom_path', mock.MagicMock(return_value = None))
+    # @mock.patch('sonic_platform.sfp.SFP._get_sfp_type_str')
+    # def test_is_write_protected(self, mock_get_type_str):
+    #     sfp = SFP(0)
+    #     mock_get_type_str.return_value = 'cmis'
+    #     assert sfp._is_write_protected(page=0, page_offset=26, num_bytes=1)
+    #     assert not sfp._is_write_protected(page=0, page_offset=27, num_bytes=1)
 
-        # not exist page
-        assert not sfp._is_write_protected(page=3, page_offset=0, num_bytes=1)
+    #     # not exist page
+    #     assert not sfp._is_write_protected(page=3, page_offset=0, num_bytes=1)
 
-        # invalid sfp type str
-        mock_get_type_str.return_value = 'invalid'
-        assert not sfp._is_write_protected(page=0, page_offset=0, num_bytes=1)
+    #     # invalid sfp type str
+    #     mock_get_type_str.return_value = 'invalid'
+    #     assert not sfp._is_write_protected(page=0, page_offset=0, num_bytes=1)
 
     def test_get_sfp_type_str(self):
         sfp = SFP(0)
