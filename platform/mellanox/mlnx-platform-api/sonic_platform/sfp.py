@@ -155,7 +155,7 @@ SFP_EEPROM_NOT_AVAILABLE = 'Input/output error'
 limited_eeprom = {
     SFP_TYPE_CMIS: {
         'write': {
-            0: [26, (31, 36), (126, 127)],
+           # 0: [26, (31, 36), (126, 127)],
            # 16: [(0, 128)]
         }
     },
