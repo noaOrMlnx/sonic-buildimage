@@ -418,7 +418,9 @@ class Chassis(ChassisBase):
             else:
                 if not wait_for_ever:
                     elapse = time.time() - begin
+                    logger.log_info(f"get_change_event: wait_for_ever {wait_for_ever} elapse {elapse} iteartion {i}")
                     if elapse >= timeout:
+                        logger.log_info(f"elapse {elapse} > timeout {timeout} iteartion {i} returning empty dict")
                         return True, {'sfp': {}}
             i += 1
 

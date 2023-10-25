@@ -1,3 +1,20 @@
+#
+# Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
+# Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 import threading
 import time
 import queue
@@ -268,8 +285,9 @@ class ModulesMgmtTask(threading.Thread):
                         logger.log_info("dynamic detection dummy read presence {} int {} for port {} before polling"
                                       .format(val, val_int, module_obj.port_num))
                     except Exception as e:
-                        logger.log_info("dynamic detection exception on dummy read presence {} for port {} traceback:\n{}"
-                                      .format(e, module_obj.port_num, traceback.format_exc()))
+                        logger.log_info(f"dynamic detection exception on dummy read presence {e} for port "
+                                        f"{module_obj.port_num} fd name {module_fd.name} "
+                                        f"traceback:\n{traceback.format_exc()}")
                 dummy_read = True
             # poll for changes with 1 second timeout
             fds_events = self.poll_obj.poll(1000)
@@ -285,16 +303,22 @@ class ModulesMgmtTask(threading.Thread):
                 elif 'power_good' == fd_name:
                     module_fd_path = module_obj.module_power_good_fd_path
                 self.fds_events_count_dict[module_obj.port_num][fd_name] += 1
-                val = module_fd.read()
-                module_fd.seek(0)
-                logger.log_info("dynamic detection got module_obj {} with port {} from fd number {} path {} count {}"
-                              .format(module_obj, module_obj.port_num, fd, module_fd_path, self.fds_events_count_dict[module_obj.port_num]))
-                if module_obj.port_num not in self.sfp_port_dict.keys():
-                    logger.log_info("dynamic detection port {} not found in sfp_port_dict keys: {} resetting all states".format(module_obj.port_num, self.sfp_port_dict.keys()))
-                    module_obj.reset_all_states()
-                    # put again module obj in sfp_port_dict so next loop will work on it
-                    self.sfp_port_dict[module_obj.port_num] = module_obj
-                    self.delete_ports_from_state_db_list.append(module_obj.port_num)
+                try:
+                    val = module_fd.read()
+                    module_fd.seek(0)
+                    logger.log_info("dynamic detection got module_obj {} with port {} from fd number {} path {} count {}"
+                                  .format(module_obj, module_obj.port_num, fd, module_fd_path
+                                          , self.fds_events_count_dict[module_obj.port_num]))
+                    if module_obj.port_num not in self.sfp_port_dict.keys():
+                        logger.log_info("dynamic detection port {} not found in sfp_port_dict keys: {} resetting all states"
+                                        .format(module_obj.port_num, self.sfp_port_dict.keys()))
+                        module_obj.reset_all_states()
+                        # put again module obj in sfp_port_dict so next loop will work on it
+                        self.sfp_port_dict[module_obj.port_num] = module_obj
+                        self.delete_ports_from_state_db_list.append(module_obj.port_num)
+                except Exception as e:
+                    logger.log_info("dynamic detection exception on read presence {} for port {} fd name {} traceback:\n{}"
+                                    .format(e, module_obj.port_num, module_fd.name, traceback.format_exc()))
             self.delete_ports_state_from_state_db(self.delete_ports_from_state_db_list)
             for port_num, module_sm_obj in self.sfp_port_dict.items():
                 curr_state = module_sm_obj.get_current_state()
@@ -477,7 +501,6 @@ class ModulesMgmtTask(threading.Thread):
         if module_type not in [24, 25]:
             logger.log_info("check_module_type setting STATE_FW_CONTROL for {} in check_module_type port {} module_sm_obj {}"
                             .format(module_type, port, module_sm_obj))
-            module_sm_obj.set_final_state(STATE_FW_CONTROL)
             return STATE_FW_CONTROL
         else:
             if xcvr_api.is_flat_memory():
@@ -530,7 +553,7 @@ class ModulesMgmtTask(threading.Thread):
     def save_module_control_mode(self, port, module_sm_obj, dynamic=False):
         logger.log_info("save_module_control_mode setting current state {} for port {} as final state".format(module_sm_obj.get_current_state(), port))
         state = module_sm_obj.get_current_state()
-        module_sm_obj.final_state = state
+        module_sm_obj.set_final_state(state)
         if state == STATE_FW_CONTROL:
             # echo 0 > /sys/module/sx_core/$asic/$module/control
             indep_fd_fw_control = SYSFS_INDEPENDENT_FD_FW_CONTROL.format(port)
@@ -658,7 +681,7 @@ class ModulesMgmtTask(threading.Thread):
         for port in self.sfp_delete_list_from_port_dict:
             del self.sfp_port_dict[port]
         self.sfp_delete_list_from_port_dict = []
-        logger.log_info("dynamic detection sfp_port_dict after deletion: {}".format(self.sfp_port_dict))
+        logger.log_info("{} detection sfp_port_dict after deletion: {}".format(self.sfp_port_dict, detection_method))
 
     def send_changes_to_shared_queue(self, dynamic=False):
         detection_method = 'dynamic' if dynamic else 'static'
