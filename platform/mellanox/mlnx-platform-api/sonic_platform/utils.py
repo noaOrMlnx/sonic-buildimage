@@ -34,6 +34,8 @@ RJ45_PORT_TYPE = "RJ45"
 
 logger = Logger()
 
+db_instances = None
+
 
 def read_from_file(file_path, target_type, default='', raise_exception=False, log_func=logger.log_error):
     """
@@ -342,3 +344,20 @@ class Timer(threading.Thread):
             timer_event.execute()
             if timer_event.repeat:
                 self.add_timer_event(timer_event, False)
+class DbUtils:
+    db_instances = {}
+
+    @classmethod
+    def get_db_instance(cls, db_name, **kargs):
+        try:
+            if db_name not in cls.db_instances:
+                from sonic_py_common import multi_asic
+                from swsscommon.swsscommon import SonicV2Connector
+                namespace = multi_asic.get_current_namespace()
+                db = SonicV2Connector(use_unix_socket_path=True, namespace=namespace)
+                db.connect(db_name)
+                cls.db_instances[db_name] = db
+            return cls.db_instances[db_name]
+        except Exception as e:
+            logger.log_error(f'Failed to get DB instance for DB {db_name} - {e}')
+            raise e

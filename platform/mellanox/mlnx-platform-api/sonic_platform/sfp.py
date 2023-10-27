@@ -122,6 +122,7 @@ SFP_SYSFS_STATUS = 'status'
 SFP_SYSFS_STATUS_ERROR = 'statuserror'
 SFP_SYSFS_PRESENT = 'present'
 SFP_SYSFS_RESET = 'reset'
+SFP_SYSFS_HWRESET = 'hw_reset'
 SFP_SYSFS_POWER_MODE = 'power_mode'
 SFP_SYSFS_POWER_MODE_POLICY = 'power_mode_policy'
 POWER_MODE_POLICY_HIGH = 1
@@ -337,8 +338,17 @@ class SFP(NvidiaSFPCommon):
 
         refer plugins/sfpreset.py
         """
-        file_path = SFP_SDK_MODULE_SYSFS_ROOT_TEMPLATE.format(self.sdk_index) + SFP_SYSFS_RESET
-        return utils.write_file(file_path, '1')
+        try:
+            if not self.is_sw_control():
+                file_path = SFP_SDK_MODULE_SYSFS_ROOT_TEMPLATE.format(self.sdk_index) + SFP_SYSFS_RESET
+                return utils.write_file(file_path, '1')
+            else:
+                file_path = SFP_SDK_MODULE_SYSFS_ROOT_TEMPLATE.format(self.sdk_index) + SFP_SYSFS_HWRESET
+                return utils.write_file(file_path, '0') and utils.write_file(file_path, '1')
+        except Exception as e:
+            print(f'Failed to reset module - {e}')
+            logger.log_error(f'Failed to reset module - {e}')
+            return False
 
     def set_lpmode(self, lpmode):
         """
