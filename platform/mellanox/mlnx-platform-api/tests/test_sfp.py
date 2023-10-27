@@ -144,8 +144,13 @@ class TestSfp:
 
     @mock.patch('sonic_platform.sfp.SFP._get_eeprom_path', mock.MagicMock(return_value = None))
     @mock.patch('sonic_platform.sfp.SFP._get_sfp_type_str')
-    def test_is_write_protected(self, mock_get_type_str):
+    @mock.patch('sonic_platform.sfp.SFP.is_sw_control')
+    def test_is_write_protected(self, mock_sw_control, mock_get_type_str):
         sfp = SFP(0)
+        mock_sw_control.return_value = True
+        assert not sfp._is_write_protected(page=0, page_offset=26, num_bytes=1)
+
+        mock_sw_control.return_value = False
         mock_get_type_str.return_value = 'cmis'
         assert sfp._is_write_protected(page=0, page_offset=26, num_bytes=1)
         assert not sfp._is_write_protected(page=0, page_offset=27, num_bytes=1)
@@ -330,8 +335,6 @@ class TestSfp:
         })
         assert sfp.get_temperature_warning_threashold() == 75.0
         assert sfp.get_temperature_critical_threashold() == 85.0
-
-
 
     @mock.patch('sonic_platform.device_data.DeviceDataManager.is_independent_mode')
     @mock.patch('sonic_platform.utils.DbUtils.get_db_instance')
