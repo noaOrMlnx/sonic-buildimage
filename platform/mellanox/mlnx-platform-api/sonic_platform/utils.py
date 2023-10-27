@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020-2021 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2020-2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,9 @@ import ctypes
 import functools
 import subprocess
 import json
+import queue
 import sys
+import threading
 import time
 import os
 from sonic_py_common import device_info
@@ -100,15 +102,15 @@ def read_float_from_file(file_path, default=0.0, raise_exception=False, log_func
     return read_from_file(file_path=file_path, target_type=float, default=default, raise_exception=raise_exception, log_func=log_func)
 
 
-def _key_value_converter(content):
+def _key_value_converter(content, delimeter):
     ret = {}
     for line in content.splitlines():
-        k,v = line.split(':')
+        k,v = line.split(delimeter)
         ret[k.strip()] = v.strip()
     return ret
 
 
-def read_key_value_file(file_path, default={}, raise_exception=False, log_func=logger.log_error):
+def read_key_value_file(file_path, default={}, raise_exception=False, log_func=logger.log_error, delimeter=':'):
     """Read file content and parse the content to a dict. The file content should like:
        key1:value1
        key2:value2
@@ -119,7 +121,8 @@ def read_key_value_file(file_path, default={}, raise_exception=False, log_func=l
         raise_exception (bool, optional): If exception should be raised or hiden. Defaults to False.
         log_func (optional): logger function.. Defaults to logger.log_error.
     """
-    return read_from_file(file_path=file_path, target_type=_key_value_converter, default=default, raise_exception=raise_exception, log_func=log_func)
+    converter = lambda content: _key_value_converter(content, delimeter)
+    return read_from_file(file_path=file_path, target_type=converter, default=default, raise_exception=raise_exception, log_func=log_func)
 
 
 def write_file(file_path, content, raise_exception=False, log_func=logger.log_error):
@@ -285,3 +288,57 @@ def wait_until(predict, timeout, interval=1, *args, **kwargs):
         time.sleep(interval)
         timeout -= interval
     return False
+
+
+class TimerEvent:
+    def __init__(self, interval, cb, repeat):
+        self.interval = interval
+        self._cb = cb
+        self.repeat = repeat
+
+    def execute(self):
+        self._cb()
+
+
+class Timer(threading.Thread):
+    def __init__(self):
+        super(Timer, self).__init__()
+        self._timestamp_queue = queue.PriorityQueue()
+        self._wait_event = threading.Event()
+        self._stop_event = threading.Event()
+        self._min_timestamp = None
+
+    def schedule(self, interval, cb, repeat=True, run_now=True):
+        timer_event = TimerEvent(interval, cb, repeat)
+        self.add_timer_event(timer_event, run_now)
+
+    def add_timer_event(self, timer_event, run_now=True):
+        timestamp = time.time()
+        if not run_now:
+            timestamp += timer_event.interval
+
+        self._timestamp_queue.put_nowait((timestamp, timer_event))
+        if self._min_timestamp is not None and timestamp < self._min_timestamp:
+            self._wait_event.set()
+
+    def stop(self):
+        if self.is_alive():
+            self._wait_event.set()
+            self._stop_event.set()
+            self.join()
+
+    def run(self):
+        while not self._stop_event.is_set():
+            now = time.time()
+            item = self._timestamp_queue.get()
+            self._min_timestamp = item[0]
+            if self._min_timestamp > now:
+                self._wait_event.wait(self._min_timestamp - now)
+                self._wait_event.clear()
+                self._timestamp_queue.put(item)
+                continue
+
+            timer_event = item[1]
+            timer_event.execute()
+            if timer_event.repeat:
+                self.add_timer_event(timer_event, False)

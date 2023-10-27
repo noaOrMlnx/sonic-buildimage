@@ -79,6 +79,8 @@ class Chassis(ChassisBase):
     # System UID LED
     _led_uid = None
 
+    chassis_instance = None
+
     def __init__(self):
         super(Chassis, self).__init__()
 
@@ -124,6 +126,7 @@ class Chassis(ChassisBase):
         self._RJ45_port_inited = False
         self._RJ45_port_list = None
 
+        Chassis.chassis_instance = self
         logger.log_info("Chassis loaded successfully")
 
     def __del__(self):
