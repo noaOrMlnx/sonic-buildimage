@@ -26,8 +26,8 @@ try:
     from sonic_py_common.logger import Logger
     from sonic_py_common import device_info, multi_asic
     from .device_data import DeviceDataManager
-    from sonic_platform_base.sfp_base import SfpBase
     from sonic_platform_base.sonic_xcvr.fields import consts
+    from sonic_platform_base.sonic_xcvr.api.public import cmis
     from . import sfp as sfp_module
     from . import utils
     from swsscommon.swsscommon import SonicV2Connector
@@ -374,10 +374,7 @@ class ModulesMgmtTask(threading.Thread):
 
     def check_if_hw_present(self, port, module_sm_obj, dynamic=False):
         logger.log_info("enter check_if_hw_present port {} module_sm_obj {}".format(port, module_sm_obj))
-        if self.is_supported_indep_mods_system:
-            module_fd_indep_path = SYSFS_INDEPENDENT_FD_PRESENCE.format(port)
-        else:
-            module_fd_indep_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
+        module_fd_indep_path = module_sm_obj.module_fd_path
         if os.path.isfile(module_fd_indep_path):
             try:
                 val_int = utils.read_int_from_file(module_fd_indep_path)
@@ -475,40 +472,18 @@ class ModulesMgmtTask(threading.Thread):
             logger.log_info("check_module_type setting as FW control as xcvr_api is empty for port {} module_sm_obj {}"
                             .format(port, module_sm_obj))
             return STATE_FW_CONTROL
-        field = xcvr_api.xcvr_eeprom.mem_map.get_field(consts.ID_FIELD)
-        module_type_ba = xcvr_api.xcvr_eeprom.reader(field.get_offset(), field.get_size())
-        if module_type_ba is None:
-            logger.log_info("check_module_type module_type is None for port {} - checking if we didnt retry yet max "
-                            "number of retries: {}".format(port, MAX_EEPROM_ERROR_RESET_RETRIES))
-            # if we didnt do this retry yet - do it up to 3 times - workaround for FW issue blocking upper page access
-            if module_sm_obj.eeprom_poweron_reset_retries < MAX_EEPROM_ERROR_RESET_RETRIES:
-                logger.log_info(f"check_module_type module_type is None retrying by falling back to STATE_NOT_POWERED "
-                                f"eeprom reset retries {module_sm_obj.eeprom_poweron_reset_retries} for port {port}")
-                utils.write_file(SYSFS_INDEPENDENT_FD_HW_RESET.format(port), "1")
-                utils.write_file(SYSFS_INDEPENDENT_FD_HW_RESET.format(port), "0")
-                self.add_port_to_wait_reset(module_sm_obj)
-                module_sm_obj.eeprom_poweron_reset_retries += 1
-                return STATE_NOT_POWERED
-            else:
-                logger.log_info("check_module_type module_type is None and already retried - setting as STATE_ERROR_HANDLER"
-                              "for port {}".format(port))
-                module_sm_obj.set_final_state(STATE_ERROR_HANDLER)
-                return STATE_ERROR_HANDLER
-        module_type = int.from_bytes(module_type_ba, "big")
-        logger.log_info("check_module_type got module_type {} in check_module_type port {} module_sm_obj {}"
-                        .format(module_type, port, module_sm_obj))
         # QSFP-DD ID is 24, OSFP ID is 25 - only these 2 are supported currently as independent module - SW controlled
-        if module_type not in [24, 25]:
+        if not isinstance(xcvr_api, cmis.CmisApi):
             logger.log_info("check_module_type setting STATE_FW_CONTROL for {} in check_module_type port {} module_sm_obj {}"
-                            .format(module_type, port, module_sm_obj))
+                            .format(xcvr_api, port, module_sm_obj))
             return STATE_FW_CONTROL
         else:
             if xcvr_api.is_flat_memory():
                 logger.log_info("check_module_type port {} setting STATE_FW_CONTROL module ID {} due to flat_mem device"
-                              .format(module_type, port))
+                              .format(xcvr_api, port))
                 return STATE_FW_CONTROL
             logger.log_info("check_module_type checking power cap for {} in check_module_type port {} module_sm_obj {}"
-                               .format(module_type, port, module_sm_obj))
+                               .format(xcvr_api, port, module_sm_obj))
             power_cap = self.check_power_cap(port, module_sm_obj)
             if power_cap is STATE_POWER_LIMIT_ERROR:
                 module_sm_obj.set_final_state(STATE_POWER_LIMIT_ERROR)
