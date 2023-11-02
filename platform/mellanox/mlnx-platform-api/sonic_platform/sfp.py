@@ -239,6 +239,11 @@ class SFP(NvidiaSFPCommon):
         Returns:
             bool: True if device is present, False if not
         """
+        try:
+            self.is_sw_control()
+        except:
+            return False
+
         eeprom_raw = self._read_eeprom(0, 1, log_on_error=False)
         return eeprom_raw is not None
 
@@ -279,7 +284,12 @@ class SFP(NvidiaSFPCommon):
                     size={num_bytes}, offset={offset}, error = {e}')
             return None
 
-        return bytearray(content)
+        data = bytearray(content)
+        if len(data) != num_bytes:
+            logger.log_error(f"Reading inconsist EEPROM data for module {self.sdk_index}, expect {num_bytes}, got {len(data)}")
+            return None
+
+        return data
 
     # write eeprom specfic bytes beginning from offset with size as num_bytes
     def write_eeprom(self, offset, num_bytes, write_buffer):
