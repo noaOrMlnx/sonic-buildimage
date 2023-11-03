@@ -213,6 +213,7 @@ class TestSfp:
         assert page_offset is 0
 
     @mock.patch('sonic_platform.sfp.SFP._read_eeprom')
+    @mock.patch('sonic_platform.sfp.SFP.is_sw_control', mock.MagicMock(return_value=False))
     def test_sfp_get_presence(self, mock_read):
         sfp = SFP(0)
         mock_read.return_value = None
