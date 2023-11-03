@@ -295,9 +295,9 @@ class ModulesMgmtTask(threading.Thread):
             for fd, event in fds_events:
                 # get modules object from fd according to saved key-value of fd-module obj saved earlier
                 logger.log_info("dynamic detection working on fd {} event {}".format(fd, event))
-                module_obj = self.fds_mapping_to_obj[fd_fileno]['module_obj']
-                module_fd = self.fds_mapping_to_obj[fd_fileno]['fd']
-                fd_name = self.fds_mapping_to_obj[fd_fileno]['fd_name']
+                module_obj = self.fds_mapping_to_obj[fd]['module_obj']
+                module_fd = self.fds_mapping_to_obj[fd]['fd']
+                fd_name = self.fds_mapping_to_obj[fd]['fd_name']
                 if 'presence' == fd_name:
                     module_fd_path = module_obj.module_fd_path
                 elif 'power_good' == fd_name:
