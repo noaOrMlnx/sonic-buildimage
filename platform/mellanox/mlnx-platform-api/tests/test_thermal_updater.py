@@ -116,12 +116,12 @@ class TestThermalUpdater:
         mock_sfp.get_temperature_critical_threashold = mock.MagicMock(return_value=80.0)
         updater = ThermalUpdater([mock_sfp])
         updater.update_module()
-        hw_management_independent_mode_update.thermal_data_set_module.assert_called_once_with(0, 11, 55000, 70000, 80000)
+        hw_management_independent_mode_update.thermal_data_set_module.assert_called_once_with(0, 11, 55000, 80000, 70000, 0)
 
         mock_sfp.get_temperature = mock.MagicMock(return_value=0.0)
         hw_management_independent_mode_update.reset_mock()
         updater.update_module()
-        hw_management_independent_mode_update.thermal_data_set_module.assert_called_once_with(0, 11, 0, 0, 0)
+        hw_management_independent_mode_update.thermal_data_set_module.assert_called_once_with(0, 11, 0, 0, 0, 0)
 
         mock_sfp.get_presence = mock.MagicMock(return_value=False)
         updater.update_module()

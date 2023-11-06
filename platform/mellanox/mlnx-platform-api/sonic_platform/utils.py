@@ -351,10 +351,8 @@ class DbUtils:
     def get_db_instance(cls, db_name, **kargs):
         try:
             if db_name not in cls.db_instances:
-                from sonic_py_common import multi_asic
                 from swsscommon.swsscommon import SonicV2Connector
-                namespace = multi_asic.get_current_namespace()
-                db = SonicV2Connector(use_unix_socket_path=True, namespace=namespace)
+                db = SonicV2Connector(use_unix_socket_path=True)
                 db.connect(db_name)
                 cls.db_instances[db_name] = db
             return cls.db_instances[db_name]
