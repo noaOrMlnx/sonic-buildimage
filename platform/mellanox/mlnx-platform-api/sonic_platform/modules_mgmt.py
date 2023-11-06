@@ -90,6 +90,7 @@ class ModulesMgmtTask(threading.Thread):
         self.timer = threading.Thread()
         self.poll_obj = None
         self.fds_mapping_to_obj = {}
+        self.port_to_fds = {}
         self.fds_events_count_dict = {}
         self.delete_ports_from_state_db_list = []
         self.setName("ModulesMgmtTask")
@@ -265,7 +266,8 @@ class ModulesMgmtTask(threading.Thread):
             logger.log_info("dynamic detection running iteration {}".format(i))
             # dummy read all sysfs fds before polling them due to linux kernel implementation of poll
             if not dummy_read:
-                for fd_fileno in self.fds_mapping_to_obj:
+                fds_events = self.poll_obj.poll(1000)
+                for fd_fileno, event in fds_events:
                     # dummy read present / hw_present / power_good sysfs
                     module_obj = self.fds_mapping_to_obj[fd_fileno]['module_obj']
                     module_fd = self.fds_mapping_to_obj[fd_fileno]['fd']
@@ -285,7 +287,7 @@ class ModulesMgmtTask(threading.Thread):
                         logger.log_info("dynamic detection dummy read presence {} int {} for port {} before polling"
                                       .format(val, val_int, module_obj.port_num))
                     except Exception as e:
-                        logger.log_info(f"dynamic detection exception on dummy read presence {e} for port "
+                        logger.log_error(f"dynamic detection exception on dummy read presence {e} for port "
                                         f"{module_obj.port_num} fd name {module_fd.name} "
                                         f"traceback:\n{traceback.format_exc()}")
                 dummy_read = True
@@ -312,12 +314,13 @@ class ModulesMgmtTask(threading.Thread):
                     if module_obj.port_num not in self.sfp_port_dict.keys():
                         logger.log_info("dynamic detection port {} not found in sfp_port_dict keys: {} resetting all states"
                                         .format(module_obj.port_num, self.sfp_port_dict.keys()))
+                        self.deregister_fd_from_polling(module_obj.port_num)
                         module_obj.reset_all_states()
                         # put again module obj in sfp_port_dict so next loop will work on it
                         self.sfp_port_dict[module_obj.port_num] = module_obj
                         self.delete_ports_from_state_db_list.append(module_obj.port_num)
                 except Exception as e:
-                    logger.log_info("dynamic detection exception on read presence {} for port {} fd name {} traceback:\n{}"
+                    logger.log_error("dynamic detection exception on read presence {} for port {} fd name {} traceback:\n{}"
                                     .format(e, module_obj.port_num, module_fd.name, traceback.format_exc()))
             self.delete_ports_state_from_state_db(self.delete_ports_from_state_db_list)
             for port_num, module_sm_obj in self.sfp_port_dict.items():
@@ -406,10 +409,7 @@ class ModulesMgmtTask(threading.Thread):
                 val_int = int(val)
                 module_sm_obj.module_power_good_fd_path = module_fd_indep_path
                 module_sm_obj.module_power_good_fd = module_power_good_fd
-                # registering power good sysfs even if not good, so we can get an event from poller upon changes
-                self.poll_obj.register(module_sm_obj.module_power_good_fd, select.POLLERR | select.POLLPRI)
-                self.fds_mapping_to_obj[module_sm_obj.module_power_good_fd.fileno()] = { 'module_obj' : module_sm_obj
-                                                    , 'fd':module_sm_obj.module_power_good_fd, 'fd_name' : 'power_good'}
+
                 if 0 == val_int:
                     logger.log_info(f'port {port} power is not good')
                     module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
@@ -541,14 +541,33 @@ class ModulesMgmtTask(threading.Thread):
             module_fd = open(module_fd_legacy_path, "r")
             module_sm_obj.set_module_fd(module_fd)
             logger.log_info("save_module_control_mode changed module fd to legacy present for port {}".format(port))
+        else:
+            # registering power good sysfs even if not good, so we can get an event from poller upon changes
+            self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_power_good_fd, 'power_good')
         # register the module's sysfs fd to poller with ERR and PRI attrs
         logger.log_info("save_module_control_mode registering sysfs fd {} number {} path {} for port {}"
                       .format(module_sm_obj.module_fd, module_sm_obj.module_fd.fileno(), module_sm_obj.set_module_fd_path, port))
-        self.poll_obj.register(module_sm_obj.module_fd, select.POLLERR | select.POLLPRI)
-        self.fds_mapping_to_obj[module_sm_obj.module_fd.fileno()] = { 'module_obj' : module_sm_obj
-                                                    , 'fd': module_sm_obj.module_fd, 'fd_name' : 'presence' }
+        self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_fd, 'presence')
         logger.log_info("save_module_control_mode set current state {} for port {} as final state {}".format(
             module_sm_obj.get_current_state(), port, module_sm_obj.get_final_state()))
+
+    def register_fd_for_polling(self, module_sm_obj, fd, fd_name):
+        self.fds_mapping_to_obj[fd.fileno()] = {'module_obj' : module_sm_obj,
+                                                'fd': fd,
+                                                'fd_name' : fd_name}
+        if module_sm_obj.port_num not in self.port_to_fds:
+            self.port_to_fds[module_sm_obj.port_num] = [fd]
+        else:
+            self.port_to_fds[module_sm_obj.port_num].append(fd)
+        self.poll_obj.register(fd, select.POLLERR | select.POLLPRI)
+
+    def deregister_fd_from_polling(self, port):
+        if port in self.port_to_fds:
+            fds = self.port_to_fds[port]
+            for fd in fds:
+                self.fds_mapping_to_obj.pop(fd)
+                self.poll_obj.unregister(fd)
+            self.port_to_fds.pop(port)
 
     def timerTask(self): # wakes up every 1 second
         logger.log_info("timerTask entered run state")
@@ -580,7 +599,7 @@ class ModulesMgmtTask(threading.Thread):
                         logger.log_info("timerTask module port {} adding to delete list to remove from waiting_modules_list".format(module.port_num))
                         port_list_to_delete.append(module.port_num)
             logger.log_info("timerTask deleting ports {} from waiting_modules_list...".format(port_list_to_delete))
-            for port in port_list_to_delete:            
+            for port in port_list_to_delete:
                 logger.log_info("timerTask deleting port {} from waiting_modules_list".format(port))
                 self.waiting_modules_list.remove(port)
             logger.log_info("timerTask waiting_modules_list after deletion: {}".format(self.waiting_modules_list))
