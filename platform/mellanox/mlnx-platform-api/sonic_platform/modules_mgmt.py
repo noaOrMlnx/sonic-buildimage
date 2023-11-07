@@ -565,7 +565,7 @@ class ModulesMgmtTask(threading.Thread):
         if port in self.port_to_fds:
             fds = self.port_to_fds[port]
             for fd in fds:
-                self.fds_mapping_to_obj.pop(fd)
+                self.fds_mapping_to_obj.pop(fd.fileno())
                 self.poll_obj.unregister(fd)
             self.port_to_fds.pop(port)
 
