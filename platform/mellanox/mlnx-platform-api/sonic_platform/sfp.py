@@ -210,7 +210,7 @@ class SFP(NvidiaSFPCommon):
 
         if slot_id == 0: # For non-modular chassis
             from .thermal import initialize_sfp_thermal
-            self._thermal_list = initialize_sfp_thermal(sfp_index)
+            self._thermal_list = initialize_sfp_thermal(self)
         else: # For modular chassis
             # (slot_id % MAX_LC_CONUNT - 1) * MAX_PORT_COUNT + (sfp_index + 1) * (MAX_PORT_COUNT / LC_PORT_COUNT)
             max_linecard_count = DeviceDataManager.get_linecard_count()
