@@ -265,6 +265,7 @@ class ModulesMgmtTask(threading.Thread):
         while not self.main_thread_stop_event.is_set():
             logger.log_info("dynamic detection running iteration {}".format(i))
             # dummy read all sysfs fds before polling them due to linux kernel implementation of poll
+            """
             if not dummy_read:
                 fds_events = self.poll_obj.poll(1000)
                 for fd_fileno, event in fds_events:
@@ -291,6 +292,7 @@ class ModulesMgmtTask(threading.Thread):
                                         f"{module_obj.port_num} fd name {module_fd.name} "
                                         f"traceback:\n{traceback.format_exc()}")
                 dummy_read = True
+            """
             # poll for changes with 1 second timeout
             fds_events = self.poll_obj.poll(1000)
             logger.log_info("dynamic detection polled obj checking fds_events iteration {}".format(i))
@@ -308,6 +310,8 @@ class ModulesMgmtTask(threading.Thread):
                 try:
                     val = module_fd.read()
                     module_fd.seek(0)
+                    if self.is_dummy_event(int(val), module_obj):
+                        continue
                     logger.log_info("dynamic detection got module_obj {} with port {} from fd number {} path {} count {}"
                                   .format(module_obj, module_obj.port_num, fd, module_fd_path
                                           , self.fds_events_count_dict[module_obj.port_num]))
@@ -374,6 +378,12 @@ class ModulesMgmtTask(threading.Thread):
                 logger.log_info("port_num: {} module_sm_obj initial state: {} current_state: {} next_state: {}"
                        .format(port_num, module_sm_obj.initial_state, module_sm_obj.get_current_state(), module_sm_obj.get_next_state()))
 
+    def is_dummy_event(self, val, module_sm_obj):
+        if val == 1:
+            return module_sm_obj.final_state in (STATE_HW_PRESENT, STATE_SW_CONTROL, STATE_FW_CONTROL)
+        elif val == 0:
+            return module_sm_obj.final_state in (STATE_HW_NOT_PRESENT,)
+        return False
 
     def check_if_hw_present(self, port, module_sm_obj, dynamic=False):
         logger.log_info("enter check_if_hw_present port {} module_sm_obj {}".format(port, module_sm_obj))
@@ -535,7 +545,7 @@ class ModulesMgmtTask(threading.Thread):
             utils.write_file(indep_fd_fw_control, "0")
             logger.log_info("save_module_control_mode set FW control for state {} port {}".format(state, port))
             # update the presence sysfs fd to legacy FD presence, first close the previous fd
-            os.close(module_sm_obj.module_fd.fileno())
+            module_sm_obj.module_fd.close()
             module_fd_legacy_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
             module_sm_obj.set_module_fd_path(module_fd_legacy_path)
             module_fd = open(module_fd_legacy_path, "r")
@@ -753,5 +763,5 @@ class ModuleStateMachine(object):
         self.final_state = ''
         self.wait_for_power_on = False
         self.eeprom_poweron_reset_retries = retries
-        os.close(self.module_fd.fileno())
-        os.close(self.module_power_good_fd.fileno())
+        self.module_fd.close()
+        self.module_power_good_fd.close()
