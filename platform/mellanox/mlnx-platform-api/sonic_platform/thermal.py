@@ -75,9 +75,7 @@ THERMAL_NAMING_RULE = {
         {
             "name": "ASIC",
             "temperature": "input",
-            "high_threshold": "emergency",
             "high_threshold_default": 105,
-            "high_critical_threshold": "critical",
             "high_critical_threshold_default": 120,
             "sysfs_folder": "/sys/module/sx_core/asic0/temperature",
             "scale": 8
@@ -325,7 +323,7 @@ class Thermal(ThermalBase):
             up to nearest thousandth of one degree Celsius, e.g. 30.125
         """
         if self.high_threshold is None:
-            return None
+            return self.high_th_default
         value = utils.read_float_from_file(self.high_threshold, None, log_func=logger.log_info)
         return value / self.scale if (value is not None and value != 0) else self.high_th_default
 
@@ -338,7 +336,7 @@ class Thermal(ThermalBase):
             up to nearest thousandth of one degree Celsius, e.g. 30.125
         """
         if self.high_critical_threshold is None:
-            return None
+            return self.high_crit_th_default
         value = utils.read_float_from_file(self.high_critical_threshold, None, log_func=logger.log_info)
         return value / self.scale if (value is not None and value != 0) else self.high_crit_th_default
 

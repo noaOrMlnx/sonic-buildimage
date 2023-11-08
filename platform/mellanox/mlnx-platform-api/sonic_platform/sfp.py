@@ -563,7 +563,12 @@ class SFP(NvidiaSFPCommon):
     def get_temperature(self):
         try:
             if not self.is_sw_control():
-                temperature = utils.read_int_from_file(f'/sys/module/sx_core/asic0/module{self.sdk_index}/temperature/input',
+                temp_file = f'/sys/module/sx_core/asic0/module{self.sdk_index}/temperature/input'
+                if not os.path.exists(temp_file):
+                    logger.log_error(f'Failed to read from file {temp_file} - not exists')
+                    return None
+                temperature = utils.read_int_from_file(temp_file,
+                                                       log_func=None,
                                                        default=None)
                 return temperature / SFP_TEMPERATURE_SCALE if temperature is not None else None
         except:
@@ -648,7 +653,14 @@ class SFP(NvidiaSFPCommon):
         if not control_type:
             raise Exception(f'Module {self.sdk_index} is in initialization, please retry later')
 
-        return control_type == 'SW_CONTROL'
+        control_file_value = utils.read_int_from_file(f'/sys/module/sx_core/asic0/module{self.sdk_index}/control')
+
+        if control_type == 'SW_CONTROL' and control_file_value == 1:
+            return True
+        elif control_type == 'FW_CONTROL' and control_file_value == 0:
+            return False
+        else:
+            raise Exception(f'Module {self.sdk_index} is in initialization, please retry later')
 
 
 class RJ45Port(NvidiaSFPCommon):

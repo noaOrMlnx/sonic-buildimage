@@ -301,10 +301,15 @@ class TestSfp:
         assert sfp.get_transceiver_threshold_info()
         sfp.reinit()
 
+    @mock.patch('os.path.exists')
     @mock.patch('sonic_platform.utils.read_int_from_file')
-    def test_get_temperature(self, mock_read):
+    def test_get_temperature(self, mock_read, mock_exists):
         sfp = SFP(0)
         sfp.is_sw_control = mock.MagicMock(return_value=True)
+        mock_exists.return_value = False
+        assert sfp.get_temperature() == None
+
+        mock_exists.return_value = True
         assert sfp.get_temperature() == None
 
         mock_read.return_value = None
