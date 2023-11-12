@@ -123,6 +123,56 @@
                         "lane6": "0x000000aa",
                         "lane7": "0x000000aa"
                     }
+                },
+                "speed:100GAUI-2": {
+                    "idriver": {
+                        "lane0": "0x0000003c",
+                        "lane1": "0x0000003c"
+                    },
+                    "pre1": {
+                        "lane0": "0x00000002",
+                        "lane1": "0x00000002"
+                    },
+                    "pre2": {
+                        "lane0": "0x00000000",
+                        "lane1": "0x00000000"
+                    },
+                    "pre3": {
+                        "lane0": "0x00000000",
+                        "lane1": "0x00000000"
+                    },
+                    "main": {
+                        "lane0": "0x00000020",
+                        "lane1": "0x00000020"
+                    },
+                    "post1": {
+                        "lane0": "0x00000006",
+                        "lane1": "0x00000006"
+                    },
+                    "ob_m2lp": {
+                        "lane0": "0x0000000e",
+                        "lane1": "0x0000000e"
+                    },
+                    "ob_alev_out": {
+                        "lane0": "0x0000000f",
+                        "lane1": "0x0000000f"
+                    },
+                    "obplev": {
+                        "lane0": "0x00000069",
+                        "lane1": "0x00000069"
+                    },
+                    "obnlev": {
+                        "lane0": "0x0000005f",
+                        "lane1": "0x0000005f"
+                    },
+                    "regn_bfm1p": {
+                        "lane0": "0x0000001e",
+                        "lane1": "0x0000001e"
+                    },
+                    "regn_bfm1n": {
+                        "lane0": "0x000000aa",
+                        "lane1": "0x000000aa"
+                    }
                 }
             },
             "QSFP-DD-active_cable_media_interface": {
