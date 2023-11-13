@@ -355,17 +355,8 @@ class SFP(NvidiaSFPCommon):
 
         refer plugins/sfpreset.py
         """
-        try:
-            if not self.is_sw_control():
-                file_path = SFP_SDK_MODULE_SYSFS_ROOT_TEMPLATE.format(self.sdk_index) + SFP_SYSFS_RESET
-                return utils.write_file(file_path, '1')
-            else:
-                file_path = SFP_SDK_MODULE_SYSFS_ROOT_TEMPLATE.format(self.sdk_index) + SFP_SYSFS_HWRESET
-                return utils.write_file(file_path, '0') and utils.write_file(file_path, '1')
-        except Exception as e:
-            print(f'Failed to reset module - {e}')
-            logger.log_error(f'Failed to reset module - {e}')
-            return False
+        file_path = SFP_SDK_MODULE_SYSFS_ROOT_TEMPLATE.format(self.sdk_index) + SFP_SYSFS_RESET
+        return utils.write_file(file_path, '1')
 
     def set_lpmode(self, lpmode):
         """

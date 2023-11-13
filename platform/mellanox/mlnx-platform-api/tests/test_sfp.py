@@ -249,14 +249,9 @@ class TestSfp:
     @mock.patch('sonic_platform.utils.write_file')
     def test_reset(self, mock_write):
         sfp = SFP(0)
-        sfp.is_sw_control = mock.MagicMock(return_value=False)
         mock_write.return_value = True
         assert sfp.reset()
         mock_write.assert_called_with('/sys/module/sx_core/asic0/module0/reset', '1')
-        sfp.is_sw_control.return_value = True
-        assert sfp.reset()
-        sfp.is_sw_control.side_effect = Exception('')
-        assert not sfp.reset()
 
     @mock.patch('sonic_platform.sfp.SFP.is_sw_control')
     @mock.patch('sonic_platform.utils.read_int_from_file')

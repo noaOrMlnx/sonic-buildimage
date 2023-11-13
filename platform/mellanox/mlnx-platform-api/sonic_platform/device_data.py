@@ -17,6 +17,7 @@
 
 import glob
 import os
+import time
 
 from . import utils
 
@@ -160,8 +161,11 @@ class DeviceDataManager:
     @classmethod
     @utils.read_only_cache()
     def get_sfp_count(cls):
-        sfp_count = utils.read_int_from_file('/run/hw-management/config/sfp_counter')
-        return sfp_count if sfp_count > 0 else len(glob.glob('/sys/module/sx_core/asic0/module*'))
+        from sonic_py_common import device_info
+        platform_path = device_info.get_path_to_platform_dir()
+        platform_json_path = os.path.join(platform_path, 'platform.json')
+        platform_data = utils.load_json_file(platform_json_path)
+        return len(platform_data['chassis']['sfps'])
 
     @classmethod
     def get_linecard_sfp_count(cls, lc_index):
@@ -237,3 +241,36 @@ class DeviceDataManager:
         sai_profile_file = os.path.join(hwsku_dir, 'sai.profile')
         data = utils.read_key_value_file(sai_profile_file, delimeter='=')
         return data.get('SAI_INDEPENDENT_MODULE_MODE') == '1'
+
+    @classmethod
+    def wait_modules_ready(cls):
+        sfp_count = cls.get_sfp_count()
+        if not cls.is_independent_mode():
+            sysfs_nodes = ['power_mode', 'power_mode_policy', 'present', 'reset', 'status', 'statuserror']
+        else:
+            sysfs_nodes = ['control', 'frequency', 'frequency_support', 'hw_present', 'hw_reset',
+                           'power_good', 'power_limit', 'power_on', 'temperature/input']
+        max_wait_time = 300
+        sleep_time = 5
+        pending_set = set((x for x in range(sfp_count)))
+        while len(pending_set) > 0:
+            ready_set = set()
+            for sfp_index in pending_set:
+                if cls.is_module_ready(sfp_index, sysfs_nodes):
+                    ready_set.add(sfp_index)
+            pending_set -= ready_set
+            if not pending_set:
+                return True
+            max_wait_time -= sleep_time
+            if max_wait_time > 0:
+                time.sleep(sleep_time)
+            else:
+                return False
+
+    @classmethod
+    def is_module_ready(cls, sfp_index, sysfs_nodes):
+        module_path = f'/sys/module/sx_core/asic0/module{sfp_index}'
+        for sysfs_node in sysfs_nodes:
+            if not os.path.exists(os.path.join(module_path, sysfs_node)):
+                return False
+        return True
