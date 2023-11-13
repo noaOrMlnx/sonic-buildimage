@@ -261,38 +261,8 @@ class ModulesMgmtTask(threading.Thread):
             module_obj = self.fds_mapping_to_obj[fd_fileno]['module_obj']
             # for debug purposes
             self.fds_events_count_dict[module_obj.port_num] = { 'presence' : 0 , 'power_good' : 0 }
-        dummy_read = False
         while not self.main_thread_stop_event.is_set():
             logger.log_info("dynamic detection running iteration {}".format(i))
-            # dummy read all sysfs fds before polling them due to linux kernel implementation of poll
-            """
-            if not dummy_read:
-                fds_events = self.poll_obj.poll(1000)
-                for fd_fileno, event in fds_events:
-                    # dummy read present / hw_present / power_good sysfs
-                    module_obj = self.fds_mapping_to_obj[fd_fileno]['module_obj']
-                    module_fd = self.fds_mapping_to_obj[fd_fileno]['fd']
-                    fd_name = self.fds_mapping_to_obj[fd_fileno]['fd_name']
-                    if 'presence' == fd_name:
-                        module_fd_path = module_obj.module_fd_path
-                    elif 'power_good' == fd_name:
-                        module_fd_path = module_obj.module_power_good_fd_path
-                    try:
-                        logger.log_info("dynamic detection dummy reading from fd path {} for port {}"
-                                      .format(module_fd_path, module_obj.port_num))
-                        val = module_fd.read()
-                        module_fd.seek(0)
-                        val_int = None
-                        if len(val) > 0:
-                            val_int = int(val)
-                        logger.log_info("dynamic detection dummy read presence {} int {} for port {} before polling"
-                                      .format(val, val_int, module_obj.port_num))
-                    except Exception as e:
-                        logger.log_error(f"dynamic detection exception on dummy read presence {e} for port "
-                                        f"{module_obj.port_num} fd name {module_fd.name} "
-                                        f"traceback:\n{traceback.format_exc()}")
-                dummy_read = True
-            """
             # poll for changes with 1 second timeout
             fds_events = self.poll_obj.poll(1000)
             logger.log_info("dynamic detection polled obj checking fds_events iteration {}".format(i))
@@ -310,23 +280,28 @@ class ModulesMgmtTask(threading.Thread):
                 try:
                     val = module_fd.read()
                     module_fd.seek(0)
-                    if self.is_dummy_event(int(val), module_obj):
-                        continue
                     logger.log_info("dynamic detection got module_obj {} with port {} from fd number {} path {} count {}"
                                   .format(module_obj, module_obj.port_num, fd, module_fd_path
                                           , self.fds_events_count_dict[module_obj.port_num]))
+                    if self.is_dummy_event(int(val), module_obj):
+                        logger.log_info(f"dynamic detection dummy event port {module_obj.port_num} from fd number {fd}")
+                        continue
                     if module_obj.port_num not in self.sfp_port_dict.keys():
                         logger.log_info("dynamic detection port {} not found in sfp_port_dict keys: {} resetting all states"
                                         .format(module_obj.port_num, self.sfp_port_dict.keys()))
                         self.deregister_fd_from_polling(module_obj.port_num)
-                        module_obj.reset_all_states()
                         # put again module obj in sfp_port_dict so next loop will work on it
                         self.sfp_port_dict[module_obj.port_num] = module_obj
                         self.delete_ports_from_state_db_list.append(module_obj.port_num)
                 except Exception as e:
                     logger.log_error("dynamic detection exception on read presence {} for port {} fd name {} traceback:\n{}"
                                     .format(e, module_obj.port_num, module_fd.name, traceback.format_exc()))
+            for port in self.delete_ports_from_state_db_list:
+                logger.log_info(f"dynamic detection resetting all states for port {module_obj.port_num}")
+                module_obj = self.sfp_port_dict[port]
+                module_obj.reset_all_states()
             self.delete_ports_state_from_state_db(self.delete_ports_from_state_db_list)
+            self.delete_ports_from_state_db_list = []
             for port_num, module_sm_obj in self.sfp_port_dict.items():
                 curr_state = module_sm_obj.get_current_state()
                 logger.log_info(f'dynamic detection STATE_LOG {port_num}: curr_state is {curr_state}')
@@ -685,7 +660,7 @@ class ModulesMgmtTask(threading.Thread):
         for port in self.sfp_delete_list_from_port_dict:
             del self.sfp_port_dict[port]
         self.sfp_delete_list_from_port_dict = []
-        logger.log_info("{} detection sfp_port_dict after deletion: {}".format(self.sfp_port_dict, detection_method))
+        logger.log_info("{} detection sfp_port_dict after deletion: {}".format(detection_method, self.sfp_port_dict))
 
     def send_changes_to_shared_queue(self, dynamic=False):
         detection_method = 'dynamic' if dynamic else 'static'
