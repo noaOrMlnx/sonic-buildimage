@@ -94,6 +94,7 @@ class ModulesMgmtTask(threading.Thread):
         self.fds_events_count_dict = {}
         self.delete_ports_from_state_db_list = []
         self.setName("ModulesMgmtTask")
+        self.register_hw_present_fds = []
 
     # SFPs state machine
     def get_sm_func(self, sm, port):
@@ -280,9 +281,9 @@ class ModulesMgmtTask(threading.Thread):
                 try:
                     val = module_fd.read()
                     module_fd.seek(0)
-                    logger.log_info("dynamic detection got module_obj {} with port {} from fd number {} path {} count {}"
+                    logger.log_info("dynamic detection got module_obj {} with port {} from fd number {} path {} val {} count {}"
                                   .format(module_obj, module_obj.port_num, fd, module_fd_path
-                                          , self.fds_events_count_dict[module_obj.port_num]))
+                                          , val, self.fds_events_count_dict[module_obj.port_num]))
                     if self.is_dummy_event(int(val), module_obj):
                         logger.log_info(f"dynamic detection dummy event port {module_obj.port_num} from fd number {fd}")
                         continue
@@ -297,7 +298,7 @@ class ModulesMgmtTask(threading.Thread):
                     logger.log_error("dynamic detection exception on read presence {} for port {} fd name {} traceback:\n{}"
                                     .format(e, module_obj.port_num, module_fd.name, traceback.format_exc()))
             for port in self.delete_ports_from_state_db_list:
-                logger.log_info(f"dynamic detection resetting all states for port {module_obj.port_num}")
+                logger.log_info(f"dynamic detection resetting all states for port {port}")
                 module_obj = self.sfp_port_dict[port]
                 module_obj.reset_all_states()
             self.delete_ports_state_from_state_db(self.delete_ports_from_state_db_list)
@@ -347,6 +348,7 @@ class ModulesMgmtTask(threading.Thread):
                 self.add_ports_state_to_state_db(dynamic=True)
                 self.delete_ports_from_dict(dynamic=True)
                 self.send_changes_to_shared_queue(dynamic=True)
+                self.register_hw_present_ports(True, self.register_hw_present_fds)
             i += 1
             logger.log_info("sfp_port_dict: {}".format(self.sfp_port_dict))
             for port_num, module_sm_obj in self.sfp_port_dict.items():
@@ -613,6 +615,7 @@ class ModulesMgmtTask(threading.Thread):
                 self.sfp_delete_list_from_port_dict.append(port)
                 if final_state in [STATE_HW_NOT_PRESENT, STATE_POWER_LIMIT_ERROR, STATE_ERROR_HANDLER]:
                     ctrl_type_db_value = '0'
+                    self.register_hw_present_fds.append(module_obj)
                 else:
                     ctrl_type_db_value = '1'
                 self.sfp_changes_dict[str(module_obj.port_num + 1)] = ctrl_type_db_value
@@ -675,6 +678,17 @@ class ModulesMgmtTask(threading.Thread):
         else:
             logger.log_info(f"{detection_method} sfp_changes_dict {self.sfp_changes_dict} is empty...")
 
+    def register_hw_present_ports(self, dynamic=False, module_obj_list=[]):
+        detection_method = 'dynamic' if dynamic else 'static'
+        logger.log_info(f"{detection_method} detection enter register_presence_closed_ports")
+        for module_obj in module_obj_list:
+            port = module_obj.port_num
+            module_fd_indep_path = SYSFS_INDEPENDENT_FD_PRESENCE.format(port)
+            module_obj.set_module_fd_path(module_fd_indep_path)
+            module_fd = open(module_fd_indep_path, "r")
+            module_obj.set_module_fd(module_fd)
+            logger.log_info(f"{detection_method} registering fd {module_fd} fd name {module_fd.name} for port {port}")
+            self.register_fd_for_polling(module_obj, module_fd, 'presence')
 
 class ModuleStateMachine(object):
 
