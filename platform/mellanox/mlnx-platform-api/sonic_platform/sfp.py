@@ -579,8 +579,7 @@ class SFP(NvidiaSFPCommon):
                     logger.log_error(f'Failed to read from file {temp_file} - not exists')
                     return None
                 temperature = utils.read_int_from_file(temp_file,
-                                                       log_func=None,
-                                                       default=None)
+                                                       log_func=None)
                 return temperature / SFP_TEMPERATURE_SCALE if temperature is not None else None
         except:
             return 0.0
