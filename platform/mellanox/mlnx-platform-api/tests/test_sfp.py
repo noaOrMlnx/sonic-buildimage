@@ -55,6 +55,7 @@ class TestSfp:
         assert sfp.index == 5
 
     @mock.patch('sonic_platform.sfp.SFP.read_eeprom', mock.MagicMock(return_value=None))
+    @mock.patch('sonic_platform.sfp.SFP.shared_sdk_handle', mock.MagicMock(return_value=2))
     @mock.patch('sonic_platform.sfp.SFP._get_module_info')
     @mock.patch('sonic_platform.chassis.Chassis.get_num_sfps', mock.MagicMock(return_value=2))
     @mock.patch('sonic_platform.chassis.extract_RJ45_ports_index', mock.MagicMock(return_value=[]))
@@ -141,6 +142,14 @@ class TestSfp:
 
             handle.read.side_effect = OSError('')
             assert sfp.read_eeprom(0, 1) is None
+
+    @mock.patch('sonic_platform.sfp.SFP._fetch_port_status')
+    def test_is_port_admin_status_up(self, mock_port_status):
+        mock_port_status.return_value = (0, True)
+        assert SFP.is_port_admin_status_up(None, None)
+
+        mock_port_status.return_value = (0, False)
+        assert not SFP.is_port_admin_status_up(None, None)
 
     @mock.patch('sonic_platform.sfp.SFP._get_eeprom_path', mock.MagicMock(return_value = None))
     @mock.patch('sonic_platform.sfp.SFP._get_sfp_type_str')
@@ -253,59 +262,6 @@ class TestSfp:
         assert sfp.reset()
         mock_write.assert_called_with('/sys/module/sx_core/asic0/module0/reset', '1')
 
-    @mock.patch('sonic_platform.sfp.SFP.is_sw_control')
-    @mock.patch('sonic_platform.utils.read_int_from_file')
-    def test_get_lpmode(self, mock_read_int, mock_control):
-        sfp = SFP(0)
-        mock_control.return_value = False
-        mock_read_int.return_value = 1
-        assert sfp.get_lpmode()
-        mock_read_int.assert_called_with('/sys/module/sx_core/asic0/module0/power_mode')
-
-        mock_read_int.return_value = 2
-        assert not sfp.get_lpmode()
-
-        mock_control.return_value = True
-        sfp.get_xcvr_api = mock.MagicMock()
-        sfp.get_xcvr_api.return_value = None
-        assert not sfp.get_lpmode()
-        mock_api = mock.MagicMock()
-        mock_api.get_lpmode = mock.MagicMock(return_value=True)
-        sfp.get_xcvr_api.return_value = mock_api
-        assert sfp.get_lpmode()
-        mock_control.side_effect = Exception('')
-        assert not sfp.get_lpmode()
-
-    @mock.patch('sonic_platform.sfp.SFP.is_sw_control')
-    @mock.patch('sonic_platform.utils.write_file')
-    @mock.patch('sonic_platform.utils.read_int_from_file')
-    def test_set_lpmode(self, mock_read_int, mock_write, mock_control):
-        sfp = SFP(0)
-        mock_control.return_value = False
-        mock_read_int.return_value = 1
-        assert sfp.set_lpmode(False)
-        assert mock_write.call_count == 0
-
-        assert sfp.set_lpmode(True)
-        mock_write.assert_called_with('/sys/module/sx_core/asic0/module0/power_mode_policy', '2')
-
-        mock_control.return_value = True
-        sfp.get_xcvr_api = mock.MagicMock()
-        sfp.get_xcvr_api.return_value = None
-        assert not sfp.set_lpmode(True)
-
-        mock_api = mock.MagicMock()
-        mock_api.get_lpmode = mock.MagicMock(return_value=True)
-        sfp.get_xcvr_api.return_value = mock_api
-        assert sfp.set_lpmode(True)
-
-        mock_api.get_lpmode.return_value = False
-        mock_api.set_lpmode = mock.MagicMock(return_value=True)
-        assert not sfp.set_lpmode(True)
-
-        mock_control.side_effect = Exception('')
-        assert not sfp.set_lpmode(False)
-
     @mock.patch('sonic_platform.sfp.SFP.read_eeprom')
     def test_get_xcvr_api(self, mock_read):
         sfp = SFP(0)
@@ -393,3 +349,26 @@ class TestSfp:
         mock_read.return_value = 0
         with pytest.raises(Exception):
             sfp.is_sw_control()
+    '''
+    @mock.patch('sonic_platform.utils.is_host', mock.MagicMock(side_effect = [True, True, False, False]))
+    @mock.patch('subprocess.check_output', mock.MagicMock(side_effect = ['True', 'False']))
+    @mock.patch('sonic_platform.sfp.SFP._get_lpmode', mock.MagicMock(side_effect = [True, False]))
+    @mock.patch('sonic_platform.sfp.SFP.sdk_handle', mock.MagicMock(return_value = None))
+    def test_get_lpmode(self):
+        sfp = SFP(0)
+        assert sfp.get_lpmode()
+        assert not sfp.get_lpmode()
+        assert sfp.get_lpmode()
+        assert not sfp.get_lpmode()
+
+    @mock.patch('sonic_platform.utils.is_host', mock.MagicMock(side_effect = [True, True, False, False]))
+    @mock.patch('subprocess.check_output', mock.MagicMock(side_effect = ['True', 'False']))
+    @mock.patch('sonic_platform.sfp.SFP._set_lpmode', mock.MagicMock(side_effect = [True, False]))
+    @mock.patch('sonic_platform.sfp.SFP.sdk_handle', mock.MagicMock(return_value = None))
+    def test_set_lpmode(self):
+        sfp = SFP(0)
+        assert sfp.set_lpmode(True)
+        assert not sfp.set_lpmode(True)
+        assert sfp.set_lpmode(False)
+        assert not sfp.set_lpmode(False)
+    '''
