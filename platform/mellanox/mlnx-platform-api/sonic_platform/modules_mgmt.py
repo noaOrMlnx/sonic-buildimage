@@ -237,6 +237,7 @@ class ModulesMgmtTask(threading.Thread):
                 self.add_ports_state_to_state_db()
                 self.delete_ports_from_dict()
                 self.send_changes_to_shared_queue()
+                self.register_presece_closed_ports(False, self.register_hw_present_fds)
             i += 1
             logger.log_info("sfp_port_dict: {}".format(self.sfp_port_dict))
             for port_num, module_sm_obj in self.sfp_port_dict.items():
@@ -293,7 +294,8 @@ class ModulesMgmtTask(threading.Thread):
                         self.deregister_fd_from_polling(module_obj.port_num)
                         # put again module obj in sfp_port_dict so next loop will work on it
                         self.sfp_port_dict[module_obj.port_num] = module_obj
-                        self.delete_ports_from_state_db_list.append(module_obj.port_num)
+                        if '0' == val:
+                            self.delete_ports_from_state_db_list.append(module_obj.port_num)
                 except Exception as e:
                     logger.log_error("dynamic detection exception on read presence {} for port {} fd name {} traceback:\n{}"
                                     .format(e, module_obj.port_num, module_fd.name, traceback.format_exc()))
@@ -348,7 +350,8 @@ class ModulesMgmtTask(threading.Thread):
                 self.add_ports_state_to_state_db(dynamic=True)
                 self.delete_ports_from_dict(dynamic=True)
                 self.send_changes_to_shared_queue(dynamic=True)
-                self.register_hw_present_ports(True, self.register_hw_present_fds)
+                self.register_presece_closed_ports(True, self.register_hw_present_fds)
+            self.register_hw_present_fds = []
             i += 1
             logger.log_info("sfp_port_dict: {}".format(self.sfp_port_dict))
             for port_num, module_sm_obj in self.sfp_port_dict.items():
@@ -370,13 +373,16 @@ class ModulesMgmtTask(threading.Thread):
                 val_int = utils.read_int_from_file(module_fd_indep_path)
                 if 0 == val_int:
                     logger.log_info("returning {} for val {}".format(STATE_HW_NOT_PRESENT, val_int))
-                    module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
-                    return STATE_HW_NOT_PRESENT
+                    retval_state = STATE_HW_NOT_PRESENT
+                    module_sm_obj.set_final_state(retval_state)
+                    return retval_state
                 elif 1 == val_int:
-                    if not self.is_supported_indep_mods_system:
-                        module_sm_obj.set_final_state(STATE_HW_PRESENT)
                     logger.log_info("returning {} for val {}".format(STATE_HW_PRESENT, val_int))
-                    return STATE_HW_PRESENT
+                    retval_state = STATE_HW_PRESENT
+                    if not self.is_supported_indep_mods_system:
+                        module_sm_obj.set_final_state(retval_state)
+                        self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_fd, 'presence')
+                    return retval_state
             except Exception as e:
                 logger.log_info("exception {} for port {} setting final state STATE_ERROR_HANDLER".format(e, port))
                 module_sm_obj.set_final_state(STATE_ERROR_HANDLER)
@@ -513,27 +519,33 @@ class ModulesMgmtTask(threading.Thread):
             return STATE_POWER_LIMIT_ERROR
 
     def save_module_control_mode(self, port, module_sm_obj, dynamic=False):
-        logger.log_info("save_module_control_mode setting current state {} for port {} as final state".format(module_sm_obj.get_current_state(), port))
+        detection_method = 'dynamic' if dynamic else 'static'
+        logger.log_info("{} detection save_module_control_mode setting current state {} for port {} as final state"
+                        .format(detection_method, module_sm_obj.get_current_state(), port))
         state = module_sm_obj.get_current_state()
         module_sm_obj.set_final_state(state)
-        if state == STATE_FW_CONTROL:
-            # echo 0 > /sys/module/sx_core/$asic/$module/control
-            indep_fd_fw_control = SYSFS_INDEPENDENT_FD_FW_CONTROL.format(port)
-            utils.write_file(indep_fd_fw_control, "0")
-            logger.log_info("save_module_control_mode set FW control for state {} port {}".format(state, port))
-            # update the presence sysfs fd to legacy FD presence, first close the previous fd
-            module_sm_obj.module_fd.close()
-            module_fd_legacy_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
-            module_sm_obj.set_module_fd_path(module_fd_legacy_path)
-            module_fd = open(module_fd_legacy_path, "r")
-            module_sm_obj.set_module_fd(module_fd)
-            logger.log_info("save_module_control_mode changed module fd to legacy present for port {}".format(port))
-        else:
-            # registering power good sysfs even if not good, so we can get an event from poller upon changes
-            self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_power_good_fd, 'power_good')
-        # register the module's sysfs fd to poller with ERR and PRI attrs
-        logger.log_info("save_module_control_mode registering sysfs fd {} number {} path {} for port {}"
-                      .format(module_sm_obj.module_fd, module_sm_obj.module_fd.fileno(), module_sm_obj.set_module_fd_path, port))
+        try:
+            if state == STATE_FW_CONTROL:
+                # echo 0 > /sys/module/sx_core/$asic/$module/control
+                indep_fd_fw_control = SYSFS_INDEPENDENT_FD_FW_CONTROL.format(port)
+                utils.write_file(indep_fd_fw_control, "0")
+                logger.log_info("save_module_control_mode set FW control for state {} port {}".format(state, port))
+                # update the presence sysfs fd to legacy FD presence, first close the previous fd
+                module_sm_obj.module_fd.close()
+                module_fd_legacy_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
+                module_sm_obj.set_module_fd_path(module_fd_legacy_path)
+                module_fd = open(module_fd_legacy_path, "r")
+                module_sm_obj.set_module_fd(module_fd)
+                logger.log_info("save_module_control_mode changed module fd to legacy present for port {}".format(port))
+            else:
+                # registering power good sysfs even if not good, so we can get an event from poller upon changes
+                self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_power_good_fd, 'power_good')
+            # register the module's sysfs fd to poller with ERR and PRI attrs
+            logger.log_info("save_module_control_mode registering sysfs fd {} number {} path {} for port {}"
+                          .format(module_sm_obj.module_fd, module_sm_obj.module_fd.fileno(), module_sm_obj.set_module_fd_path, port))
+        except Exception as e:
+            logger.log_error("{} detection exception on read presence {} for port {} fd name {} traceback:\n{}"
+                             .format(detection_method, e, port, module_sm_obj.module_fd.name, traceback.format_exc()))
         self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_fd, 'presence')
         logger.log_info("save_module_control_mode set current state {} for port {} as final state {}".format(
             module_sm_obj.get_current_state(), port, module_sm_obj.get_final_state()))
@@ -678,12 +690,15 @@ class ModulesMgmtTask(threading.Thread):
         else:
             logger.log_info(f"{detection_method} sfp_changes_dict {self.sfp_changes_dict} is empty...")
 
-    def register_hw_present_ports(self, dynamic=False, module_obj_list=[]):
+    def register_presece_closed_ports(self, dynamic=False, module_obj_list=[]):
         detection_method = 'dynamic' if dynamic else 'static'
         logger.log_info(f"{detection_method} detection enter register_presence_closed_ports")
         for module_obj in module_obj_list:
             port = module_obj.port_num
-            module_fd_indep_path = SYSFS_INDEPENDENT_FD_PRESENCE.format(port)
+            if self.is_supported_indep_mods_system:
+                module_fd_indep_path = SYSFS_INDEPENDENT_FD_PRESENCE.format(port)
+            else:
+                module_fd_indep_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
             module_obj.set_module_fd_path(module_fd_indep_path)
             module_fd = open(module_fd_indep_path, "r")
             module_obj.set_module_fd(module_fd)
@@ -753,4 +768,5 @@ class ModuleStateMachine(object):
         self.wait_for_power_on = False
         self.eeprom_poweron_reset_retries = retries
         self.module_fd.close()
-        self.module_power_good_fd.close()
+        if self.module_power_good_fd:
+            self.module_power_good_fd.close()
