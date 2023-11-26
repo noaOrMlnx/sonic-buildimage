@@ -285,11 +285,14 @@ class ModulesMgmtTask(threading.Thread):
                     logger.log_info("dynamic detection got module_obj {} with port {} from fd number {} path {} val {} count {}"
                                   .format(module_obj, module_obj.port_num, fd, module_fd_path
                                           , val, self.fds_events_count_dict[module_obj.port_num]))
+                    # workaround for garbage received after the 0 or 1 value of sysfs i.e. 0#012 or 1#012
+                    if len(val) > 1:
+                        val = val[0]
                     if self.is_dummy_event(int(val), module_obj):
                         logger.log_info(f"dynamic detection dummy event port {module_obj.port_num} from fd number {fd}")
                         continue
                     if module_obj.port_num not in self.sfp_port_dict.keys():
-                        logger.log_info("dynamic detection port {} not found in sfp_port_dict keys: {} resetting all states"
+                        logger.log_info("dynamic detection port {} not found in sfp_port_dict keys: {} adding it"
                                         .format(module_obj.port_num, self.sfp_port_dict.keys()))
                         self.deregister_fd_from_polling(module_obj.port_num)
                         # put again module obj in sfp_port_dict so next loop will work on it
