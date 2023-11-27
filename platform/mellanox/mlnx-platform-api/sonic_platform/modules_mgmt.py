@@ -92,7 +92,7 @@ class ModulesMgmtTask(threading.Thread):
         self.fds_mapping_to_obj = {}
         self.port_to_fds = {}
         self.fds_events_count_dict = {}
-        self.delete_ports_from_state_db_list = []
+        self.delete_ports_from_state_db_dict = {}
         self.setName("ModulesMgmtTask")
         self.register_hw_present_fds = []
 
@@ -239,6 +239,7 @@ class ModulesMgmtTask(threading.Thread):
                 self.send_changes_to_shared_queue()
                 self.register_presece_closed_ports(False, self.register_hw_present_fds)
             i += 1
+            self.register_hw_present_fds = []
             logger.log_info("sfp_port_dict: {}".format(self.sfp_port_dict))
             for port_num, module_sm_obj in self.sfp_port_dict.items():
                 logger.log_info("static detection port_num: {} initial state: {} current_state: {} next_state: {}"
@@ -297,17 +298,16 @@ class ModulesMgmtTask(threading.Thread):
                         self.deregister_fd_from_polling(module_obj.port_num)
                         # put again module obj in sfp_port_dict so next loop will work on it
                         self.sfp_port_dict[module_obj.port_num] = module_obj
-                        if '0' == val:
-                            self.delete_ports_from_state_db_list.append(module_obj.port_num)
+                        self.delete_ports_from_state_db_dict[module_obj.port_num] = val
                 except Exception as e:
                     logger.log_error("dynamic detection exception on read presence {} for port {} fd name {} traceback:\n{}"
                                     .format(e, module_obj.port_num, module_fd.name, traceback.format_exc()))
-            for port in self.delete_ports_from_state_db_list:
-                logger.log_info(f"dynamic detection resetting all states for port {port}")
+            for port, val in self.delete_ports_from_state_db_dict.items():
+                logger.log_info(f"dynamic detection resetting all states for port {port} close_presence_ports {val}")
                 module_obj = self.sfp_port_dict[port]
-                module_obj.reset_all_states()
-            self.delete_ports_state_from_state_db(self.delete_ports_from_state_db_list)
-            self.delete_ports_from_state_db_list = []
+                module_obj.reset_all_states(close_presence_ports=val)
+            self.delete_ports_state_from_state_db(self.delete_ports_from_state_db_dict.keys())
+            self.delete_ports_from_state_db_dict = {}
             for port_num, module_sm_obj in self.sfp_port_dict.items():
                 curr_state = module_sm_obj.get_current_state()
                 logger.log_info(f'dynamic detection STATE_LOG {port_num}: curr_state is {curr_state}')
@@ -354,6 +354,9 @@ class ModulesMgmtTask(threading.Thread):
                 self.delete_ports_from_dict(dynamic=True)
                 self.send_changes_to_shared_queue(dynamic=True)
                 self.register_presece_closed_ports(True, self.register_hw_present_fds)
+            if not self.sfp_port_dict and is_final_state_module:
+                is_final_state_module = False
+                logger.log_info(f"sft_port_dict is empty {self.sfp_port_dict}, set is_final_state_module to {is_final_state_module}")
             self.register_hw_present_fds = []
             i += 1
             logger.log_info("sfp_port_dict: {}".format(self.sfp_port_dict))
@@ -369,7 +372,8 @@ class ModulesMgmtTask(threading.Thread):
         return False
 
     def check_if_hw_present(self, port, module_sm_obj, dynamic=False):
-        logger.log_info("enter check_if_hw_present port {} module_sm_obj {}".format(port, module_sm_obj))
+        detection_method = 'dynamic' if dynamic else 'static'
+        logger.log_info(f"{detection_method} detection enter check_if_hw_present port {port} module_sm_obj {module_sm_obj}")
         module_fd_indep_path = module_sm_obj.module_fd_path
         if os.path.isfile(module_fd_indep_path):
             try:
@@ -377,20 +381,20 @@ class ModulesMgmtTask(threading.Thread):
                 if 0 == val_int:
                     logger.log_info("returning {} for val {}".format(STATE_HW_NOT_PRESENT, val_int))
                     retval_state = STATE_HW_NOT_PRESENT
-                    module_sm_obj.set_final_state(retval_state)
+                    module_sm_obj.set_final_state(retval_state, detection_method)
                     return retval_state
                 elif 1 == val_int:
                     logger.log_info("returning {} for val {}".format(STATE_HW_PRESENT, val_int))
                     retval_state = STATE_HW_PRESENT
                     if not self.is_supported_indep_mods_system:
-                        module_sm_obj.set_final_state(retval_state)
+                        module_sm_obj.set_final_state(retval_state, detection_method)
                         self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_fd, 'presence')
                     return retval_state
             except Exception as e:
                 logger.log_info("exception {} for port {} setting final state STATE_ERROR_HANDLER".format(e, port))
                 module_sm_obj.set_final_state(STATE_ERROR_HANDLER)
                 return STATE_ERROR_HANDLER
-        module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
+        module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT, detection_method)
         return STATE_HW_NOT_PRESENT
 
     def check_if_module_available(self, port, module_sm_obj, dynamic=False):
@@ -623,6 +627,7 @@ class ModulesMgmtTask(threading.Thread):
     def add_ports_state_to_state_db(self, dynamic=False):
         state_db = None
         detection_method = 'dynamic' if dynamic else 'static'
+        logger.log_info(f"{detection_method} detection enter add_ports_state_to_state_db")
         for port, module_obj in self.sfp_port_dict.items():
             final_state = module_obj.get_final_state()
             if final_state:
@@ -630,6 +635,7 @@ class ModulesMgmtTask(threading.Thread):
                 self.sfp_delete_list_from_port_dict.append(port)
                 if final_state in [STATE_HW_NOT_PRESENT, STATE_POWER_LIMIT_ERROR, STATE_ERROR_HANDLER]:
                     ctrl_type_db_value = '0'
+                    logger.log_info(f"{detection_method} detection adding port {port} to register_hw_present_fds")
                     self.register_hw_present_fds.append(module_obj)
                 else:
                     ctrl_type_db_value = '1'
@@ -688,6 +694,7 @@ class ModulesMgmtTask(threading.Thread):
             try:
                 self.modules_changes_queue.put(self.sfp_changes_dict, timeout=1)
                 self.sfp_changes_dict = {}
+                logger.log_info(f"{detection_method} sfp_changes_dict after put changes: {self.sfp_changes_dict}")
             except queue.Full:
                 logger.log_info(f"{detection_method} failed to put item from modules changes queue, queue is full")
         else:
@@ -747,7 +754,8 @@ class ModuleStateMachine(object):
     def get_final_state(self):
         return self.final_state
 
-    def set_final_state(self, state):
+    def set_final_state(self, state, detection_method='static'):
+        logger.log_info(f"{detection_method} set_final_state setting {state} port {self.port_num}")
         self.final_state = state
 
     def advance_state(self):
@@ -763,13 +771,14 @@ class ModuleStateMachine(object):
     def set_module_fd(self, module_fd):
         self.module_fd = module_fd
 
-    def reset_all_states(self, def_state=STATE_HW_NOT_PRESENT, retries=1):
+    def reset_all_states(self, def_state=STATE_HW_NOT_PRESENT, retries=1, close_presence_ports='0'):
         self.initial_state = def_state
         self.current_state = def_state
         self.next_state = def_state
         self.final_state = ''
         self.wait_for_power_on = False
         self.eeprom_poweron_reset_retries = retries
-        self.module_fd.close()
+        if '0' == close_presence_ports:
+            self.module_fd.close()
         if self.module_power_good_fd:
             self.module_power_good_fd.close()
