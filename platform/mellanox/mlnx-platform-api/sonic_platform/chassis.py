@@ -397,6 +397,8 @@ class Chassis(ChassisBase):
             # open new SFP change events thread
             self.modules_mgmt_thread = modules_mgmt.ModulesMgmtTask(q=self.modules_changes_queue
                                                     , main_thread_stop_event = self.modules_mgmt_task_stopping_event)
+            # Set the thread as daemon so when pmon/xcvrd are shutting down, modules_mgmt will shut down immedietly.
+            self.modules_mgmt_thread.daemon = True
             self.modules_mgmt_thread.start()
         self.initialize_sfp()
         wait_for_ever = (timeout == 0)

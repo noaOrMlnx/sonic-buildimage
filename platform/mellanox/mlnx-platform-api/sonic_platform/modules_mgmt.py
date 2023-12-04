@@ -67,8 +67,6 @@ SYSFS_INDEPENDENT_FD_FREQ = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "frequency
 SYSFS_INDEPENDENT_FD_FREQ_SUPPORT = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "frequency_support")
 IS_INDEPENDENT_MODULE = 'is_independent_module'
 
-STATE_DB_TABLE_NAME_PREFIX = 'TRANSCEIVER_MODULES_MGMT|{}'
-
 MAX_EEPROM_ERROR_RESET_RETRIES = 4
 
 class ModulesMgmtTask(threading.Thread):
@@ -234,7 +232,7 @@ class ModulesMgmtTask(threading.Thread):
                         self.modules_lock_list[port_num].release()
 
             if is_final_state_module:
-                self.add_ports_state_to_state_db()
+                self.map_ports_final_state()
                 self.delete_ports_from_dict()
                 self.send_changes_to_shared_queue()
                 self.register_presece_closed_ports(False, self.register_hw_present_fds)
@@ -306,7 +304,6 @@ class ModulesMgmtTask(threading.Thread):
                 logger.log_info(f"dynamic detection resetting all states for port {port} close_presence_ports {val}")
                 module_obj = self.sfp_port_dict[port]
                 module_obj.reset_all_states(close_presence_ports=val)
-            self.delete_ports_state_from_state_db(self.delete_ports_from_state_db_dict.keys())
             self.delete_ports_from_state_db_dict = {}
             for port_num, module_sm_obj in self.sfp_port_dict.items():
                 curr_state = module_sm_obj.get_current_state()
@@ -350,7 +347,7 @@ class ModulesMgmtTask(threading.Thread):
                         self.modules_lock_list[port_num].release()
 
             if is_final_state_module:
-                self.add_ports_state_to_state_db(dynamic=True)
+                self.map_ports_final_state(dynamic=True)
                 self.delete_ports_from_dict(dynamic=True)
                 self.send_changes_to_shared_queue(dynamic=True)
                 self.register_presece_closed_ports(True, self.register_hw_present_fds)
@@ -624,10 +621,9 @@ class ModulesMgmtTask(threading.Thread):
         self.waiting_modules_list.add(module_sm_obj.port_num)
         logger.log_info("add_port_to_wait_reset waiting_list after adding: {}".format(self.waiting_modules_list))
 
-    def add_ports_state_to_state_db(self, dynamic=False):
-        state_db = None
+    def map_ports_final_state(self, dynamic=False):
         detection_method = 'dynamic' if dynamic else 'static'
-        logger.log_info(f"{detection_method} detection enter add_ports_state_to_state_db")
+        logger.log_info(f"{detection_method} detection enter map_ports_final_state")
         for port, module_obj in self.sfp_port_dict.items():
             final_state = module_obj.get_final_state()
             if final_state:
@@ -640,43 +636,6 @@ class ModulesMgmtTask(threading.Thread):
                 else:
                     ctrl_type_db_value = '1'
                 self.sfp_changes_dict[str(module_obj.port_num + 1)] = ctrl_type_db_value
-                if final_state in [STATE_SW_CONTROL, STATE_FW_CONTROL]:
-                    namespaces = multi_asic.get_front_end_namespaces()
-                    for namespace in namespaces:
-                        logger.log_info(f"{detection_method} detection getting state_db for port {port} namespace {namespace}")
-                        state_db = SonicV2Connector(use_unix_socket_path=False, namespace=namespace)
-                        logger.log_info(f"{detection_method} detection getting state_db for port {port} namespace {namespace}")
-                        logger.log_info(f"{detection_method} detection got state_db for port {port} namespace {namespace}")
-                        if state_db is not None:
-                            logger.log_info(
-                                f"{detection_method} detection connecting to state_db for port {port} namespace {namespace}")
-                            state_db.connect(state_db.STATE_DB)
-                            if final_state in [STATE_FW_CONTROL]:
-                                control_type = 'FW_CONTROL'
-                            elif final_state in [STATE_SW_CONTROL]:
-                                control_type = 'SW_CONTROL'
-                            table_name = STATE_DB_TABLE_NAME_PREFIX.format(port)
-                            logger.log_info(f"{detection_method} detection setting state_db table {table_name} for port {port}"
-                                               f" namespace {namespace} control_type {control_type}")
-                            state_db.set(state_db.STATE_DB, table_name, "control_type", control_type)
-
-    def delete_ports_state_from_state_db(self, ports, dynamic=True):
-        state_db = None
-        detection_method = 'dynamic' if dynamic else 'static'
-        for port in ports:
-            namespaces = multi_asic.get_front_end_namespaces()
-            for namespace in namespaces:
-                logger.log_info(f"{detection_method} detection getting state_db for port {port} namespace {namespace}")
-                state_db = SonicV2Connector(use_unix_socket_path=False, namespace=namespace)
-                logger.log_info(f"{detection_method} detection got state_db for port {port} namespace {namespace}")
-                if state_db is not None:
-                    logger.log_info(
-                        f"{detection_method} detection connecting to state_db for port {port} namespace {namespace}")
-                    state_db.connect(state_db.STATE_DB)
-                    table_name = STATE_DB_TABLE_NAME_PREFIX.format(port)
-                    logger.log_info(f"{detection_method} detection deleting state_db table {table_name} "
-                                       f"for port {port} namespace {namespace}")
-                    state_db.delete(state_db.STATE_DB, table_name)
 
     def delete_ports_from_dict(self, dynamic=False):
         detection_method = 'dynamic' if dynamic else 'static'
