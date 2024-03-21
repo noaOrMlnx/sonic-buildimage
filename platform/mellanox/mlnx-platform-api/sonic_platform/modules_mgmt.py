@@ -586,7 +586,7 @@ class ModulesMgmtTask(threading.Thread):
             power_class_bits = {bit_id: int((power_class_ba[0] >> bit_id) & 0b1) for bit_id in [7, 6, 5, 1, 0]}
             if (power_class_bits[7], power_class_bits[6], power_class_bits[1], power_class_bits[0]) == (0, 0, 0, 0):
                 powercap = POWER_CLASS_1_MAX_POWER
-            elif (power_clשass_bits[7], power_class_bits[6], power_class_bits[1], power_class_bits[0]) == (0, 1, 0, 0):
+            elif (power_class_bits[7], power_class_bits[6], power_class_bits[1], power_class_bits[0]) == (0, 1, 0, 0):
                 powercap = POWER_CLASS_2_MAX_POWER
             elif (power_class_bits[7], power_class_bits[6], power_class_bits[1], power_class_bits[0]) == (1, 0, 0, 0):
                 powercap = POWER_CLASS_3_MAX_POWER
