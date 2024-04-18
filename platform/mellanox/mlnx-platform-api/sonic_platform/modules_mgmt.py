@@ -54,18 +54,17 @@ SAI_INDEP_MODULE_MODE_DELIMITER = "="
 SAI_INDEP_MODULE_MODE_TRUE_STR = "1"
 SYSFS_LEGACY_FD_PRESENCE = "/sys/module/sx_core/asic0/module{}/present"
 ASIC_NUM = 0
-SYSFS_INDEPENDENT_FD_PREFIX_WO_MODULE = "/sys/module/sx_core/asic{}".format(ASIC_NUM)
-SYSFS_INDEPENDENT_FD_PREFIX = SYSFS_INDEPENDENT_FD_PREFIX_WO_MODULE + "/module{}"
-SYSFS_INDEPENDENT_FD_PRESENCE = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "hw_present")
-SYSFS_INDEPENDENT_FD_POWER_GOOD = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "power_good")
-SYSFS_INDEPENDENT_FD_POWER_ON = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "power_on")
-SYSFS_INDEPENDENT_FD_HW_RESET = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "hw_reset")
-SYSFS_INDEPENDENT_FD_POWER_LIMIT = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "power_limit")
-SYSFS_INDEPENDENT_FD_FW_CONTROL = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "control")
+SYSFS_MODULE_FD_ASIC = "/sys/module/sx_core/asic{}".format(ASIC_NUM)
+SYSFS_MODULE_FD_PREFIX = SYSFS_MODULE_FD_ASIC + "/module{}"
+SYSFS_MODULE_FD_HW_PRESENCE = os.path.join(SYSFS_MODULE_FD_PREFIX, "hw_present")
+SYSFS_MODULE_FD_POWER_GOOD = os.path.join(SYSFS_MODULE_FD_PREFIX, "power_good")
+SYSFS_MODULE_FD_POWER_ON = os.path.join(SYSFS_MODULE_FD_PREFIX, "power_on")
+SYSFS_MODULE_FD_HW_RESET = os.path.join(SYSFS_MODULE_FD_PREFIX, "hw_reset")
+SYSFS_MODULE_FD_POWER_LIMIT = os.path.join(SYSFS_MODULE_FD_PREFIX, "power_limit")
+SYSFS_MODULE_FD_FW_CONTROL = os.path.join(SYSFS_MODULE_FD_PREFIX, "control")
 # echo <val>  /sys/module/sx_core/$asic/$module/frequency   //  val: 0 - up to 400KHz, 1 - up to 1MHz
-SYSFS_INDEPENDENT_FD_FREQ = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "frequency")
-SYSFS_INDEPENDENT_FD_FREQ_SUPPORT = os.path.join(SYSFS_INDEPENDENT_FD_PREFIX, "frequency_support")
-IS_INDEPENDENT_MODULE = 'is_independent_module'
+SYSFS_MODULE_FD_FREQ = os.path.join(SYSFS_MODULE_FD_PREFIX, "frequency")
+SYSFS_MODULE_FD_FREQ_SUPPORT = os.path.join(SYSFS_MODULE_FD_PREFIX, "frequency_support")
 PROC_CMDLINE = "/proc/cmdline"
 CMDLINE_STR_TO_LOOK_FOR = 'SONIC_BOOT_TYPE='
 CMDLINE_VAL_TO_LOOK_FOR = 'fastfast'
@@ -85,7 +84,7 @@ class ModulesMgmtTask(threading.Thread):
         self.sfp_delete_list_from_port_dict = []
         self.namespaces = namespaces
         self.modules_changes_queue = q
-        self.is_supported_indep_mods_system = False
+        self.is_cmis_mgmt_system = False
         self.modules_lock_list = []
         # A set to hold those modules waiting 3 seconds since power on and hw reset
         self.waiting_modules_list = set()
@@ -123,32 +122,32 @@ class ModulesMgmtTask(threading.Thread):
         return None
 
     def run(self):
-        # check first if the system supports independent mode and set boolean accordingly
+        # check first if the system supports CMIS host mgmt mode and set boolean accordingly
         (platform_path, hwsku_dir) = device_info.get_paths_to_platform_and_hwsku_dirs()
         logger.log_info("hwsku_dir {} found, continue to check sai.profile file".format(hwsku_dir))
-        independent_file = SAI_PROFILE_FILE.format(hwsku_dir)
-        if os.path.isfile(independent_file):
-            logger.log_info("file {} found, checking content for independent mode value".format(independent_file))
-            with open(independent_file, "r") as independent_file_fd:
+        profile_file = SAI_PROFILE_FILE.format(hwsku_dir)
+        if os.path.isfile(profile_file):
+            logger.log_info("file {} found, checking content for CMIS host mgmt mode value".format(profile_file))
+            with open(profile_file, "r") as profile_file_fd:
                 found = False
-                independent_file_content = ' '
-                logger.log_info("file {} found, checking content for independent mode value".format(independent_file))
-                while independent_file_content and not found:
-                    independent_file_content = independent_file_fd.readline()
-                    if SAI_INDEP_MODULE_MODE in independent_file_content and \
-                            SAI_INDEP_MODULE_MODE_DELIMITER in independent_file_content:
-                        independent_file_splitted = independent_file_content.split(SAI_INDEP_MODULE_MODE_DELIMITER)
-                        if (len(independent_file_splitted) > 1):
-                            self.is_supported_indep_mods_system = int(independent_file_splitted[1]) == int(SAI_INDEP_MODULE_MODE_TRUE_STR)
-                            logger.log_notice(f"{SAI_INDEP_MODULE_MODE}={SAI_INDEP_MODULE_MODE_TRUE_STR} in file {independent_file}, \
+                profile_file_content = ' '
+                logger.log_info("file {} found, checking content for CMIS host mgmt mode value".format(profile_file))
+                while profile_file_content and not found:
+                    profile_file_content = profile_file_fd.readline()
+                    if SAI_INDEP_MODULE_MODE in profile_file_content and \
+                            SAI_INDEP_MODULE_MODE_DELIMITER in profile_file_content:
+                        profile_file_splitted = profile_file_content.split(SAI_INDEP_MODULE_MODE_DELIMITER)
+                        if (len(profile_file_splitted) > 1):
+                            self.is_cmis_mgmt_system = int(profile_file_splitted[1]) == int(SAI_INDEP_MODULE_MODE_TRUE_STR)
+                            logger.log_notice(f"{SAI_INDEP_MODULE_MODE}={SAI_INDEP_MODULE_MODE_TRUE_STR} in file {profile_file}, \
                                 module host management mode is enabled")
                             found = True
         else:
-            logger.log_notice("module host management mode is disabled".format(independent_file))
+            logger.log_notice("module host management mode is disabled".format(profile_file))
 
-        # static init - at first go over all ports and check each one if it's independent module or legacy
+        # static init - at first go over all ports and check each one if it's sw-control module or legacy
         self.sfp_changes_dict = {}
-        # check for each port if the module connected and if it supports independent mode or legacy
+        # check for each port if the module connected and if it sw-control or fw-control
         num_of_ports = DeviceDataManager.get_sfp_count()
         # create the modules sysfs fds poller
         self.poll_obj = select.poll()
@@ -163,15 +162,15 @@ class ModulesMgmtTask(threading.Thread):
             self.is_warm_reboot = cmdline_dict[CMDLINE_STR_TO_LOOK_FOR] == CMDLINE_VAL_TO_LOOK_FOR
             logger.log_info(f"system was warm rebooted is_warm_reboot: {self.is_warm_reboot}")
         for port in range(num_of_ports):
-            # check sysfs per port whether it's independent mode or legacy
+            # check sysfs per port whether it's sw-control or fw-control
             temp_module_sm = ModuleStateMachine(port_num=port, initial_state=STATE_HW_NOT_PRESENT
                                               , current_state=STATE_HW_NOT_PRESENT)
-            module_fd_indep_path = SYSFS_INDEPENDENT_FD_PRESENCE.format(port)
-            logger.log_info("system in indep mode: {} port {}".format(self.is_supported_indep_mods_system, port))
+            module_fd_hw_present_path = SYSFS_MODULE_FD_HW_PRESENCE.format(port)
+            logger.log_info("system supports CMIS host mgmt: {} port {}".format(self.is_cmis_mgmt_system, port))
             if self.is_warm_reboot:
                 logger.log_info("system was warm rebooted is_warm_reboot: {} trying to read control sysfs for port {}"
                                 .format(self.is_warm_reboot, port))
-                port_control_file = SYSFS_INDEPENDENT_FD_FW_CONTROL.format(port)
+                port_control_file = SYSFS_MODULE_FD_FW_CONTROL.format(port)
                 try:
                     port_control = utils.read_int_from_file(port_control_file, raise_exception=True)
                     self.port_control_dict[port] = port_control
@@ -179,12 +178,12 @@ class ModulesMgmtTask(threading.Thread):
                 except Exception as e:
                     logger.log_error("exception {} for port {} trying to read port control sysfs {}"
                                      .format(e, port, port_control_file))
-            if (self.is_supported_indep_mods_system and os.path.isfile(module_fd_indep_path)) \
+            if (self.is_cmis_mgmt_system and os.path.isfile(module_fd_hw_present_path)) \
                     and not (self.is_warm_reboot and 0 == port_control):
-                logger.log_info("system in indep mode: {} port {} reading file {}".format(self.is_supported_indep_mods_system, port, module_fd_indep_path))
-                temp_module_sm.set_is_indep_modules(True)
-                temp_module_sm.set_module_fd_path(module_fd_indep_path)
-                module_fd = open(module_fd_indep_path, "r")
+                logger.log_info("system supports CMIS host mgmt: {} port {} reading file {}".format(self.is_cmis_mgmt_system, port, module_fd_hw_present_path))
+                temp_module_sm.set_is_sw_control_modules(True)
+                temp_module_sm.set_module_fd_path(module_fd_hw_present_path)
+                module_fd = open(module_fd_hw_present_path, "r")
                 temp_module_sm.set_module_fd(module_fd)
             else:
                 module_fd_legacy_path = self.get_sysfs_ethernet_port_fd(SYSFS_LEGACY_FD_PRESENCE, port)
@@ -193,7 +192,7 @@ class ModulesMgmtTask(threading.Thread):
                 temp_module_sm.set_module_fd(module_fd)
             # add lock to use with timer task updating next state per module object
             self.modules_lock_list.append(threading.Lock())
-            # start SM for this independent module
+            # start SM for this sw-controlled module
             logger.log_debug("adding temp_module_sm {} to sfp_port_dict".format(temp_module_sm))
             self.sfp_port_dict_initial[port] = temp_module_sm
             self.sfp_port_dict[port] = temp_module_sm
@@ -395,82 +394,82 @@ class ModulesMgmtTask(threading.Thread):
     def check_if_hw_present(self, port, module_sm_obj, dynamic=False):
         detection_method = 'dynamic' if dynamic else 'static'
         logger.log_debug(f"{detection_method} detection enter check_if_hw_present port {port} module_sm_obj {module_sm_obj}")
-        module_fd_indep_path = module_sm_obj.module_fd_path
-        if os.path.isfile(module_fd_indep_path):
+        module_fd_hw_present_path = module_sm_obj.module_fd_path
+        if os.path.isfile(module_fd_hw_present_path):
             try:
-                val_int = utils.read_int_from_file(module_fd_indep_path)
-                logger.log_info(f'reading sysfs {module_fd_indep_path} got value {val_int}')
+                val_int = utils.read_int_from_file(module_fd_hw_present_path)
+                logger.log_info(f'reading sysfs {module_fd_hw_present_path} got value {val_int}')
                 if 0 == val_int:
                     retval_state = STATE_HW_NOT_PRESENT
                     module_sm_obj.set_final_state(retval_state, detection_method)
                     return retval_state
                 elif 1 == val_int:
                     retval_state = STATE_HW_PRESENT
-                    if not self.is_supported_indep_mods_system or (self.is_warm_reboot and 0 == self.port_control_dict[port] and not dynamic):
+                    if not self.is_cmis_mgmt_system or (self.is_warm_reboot and 0 == self.port_control_dict[port] and not dynamic):
                         module_sm_obj.set_final_state(retval_state, detection_method)
                         self.register_fd_for_polling(module_sm_obj, module_sm_obj.module_fd, 'presence')
                     return retval_state
                 else:
-                    logger.log_error(f'unexpected value {val_int} from file {module_fd_indep_path}')
+                    logger.log_error(f'unexpected value {val_int} from file {module_fd_hw_present_path}')
                     module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT, detection_method)
                     return STATE_HW_NOT_PRESENT
             except Exception as e:
                 logger.log_error("exception {} in check_if_hw_present for port {}, setting final state STATE_ERROR_HANDLER".format(e, port))
                 module_sm_obj.set_final_state(STATE_ERROR_HANDLER)
                 return STATE_ERROR_HANDLER
-        logger.log_error(f'{module_fd_indep_path} does not exists, treat this port as not present')
+        logger.log_error(f'{module_fd_hw_present_path} does not exists, treat this port as not present')
         module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT, detection_method)
         return STATE_HW_NOT_PRESENT
 
     def check_if_module_available(self, port, module_sm_obj, dynamic=False):
         logger.log_debug("enter check_if_module_available port {} module_sm_obj {}".format(port, module_sm_obj))
-        module_fd_indep_path = SYSFS_INDEPENDENT_FD_POWER_GOOD.format(port)
-        if os.path.isfile(module_fd_indep_path):
+        module_fd_hw_present_path = SYSFS_MODULE_FD_POWER_GOOD.format(port)
+        if os.path.isfile(module_fd_hw_present_path):
             try:
                 # not using utils.read_int_from_file since need to catch the exception here if no such file or it is
                 # not accesible. utils.read_int_from_file will return 0 in such a case
-                module_power_good_fd = open(module_fd_indep_path, "r")
+                module_power_good_fd = open(module_fd_hw_present_path, "r")
                 val = module_power_good_fd.read()
                 val_int = int(val)
-                module_sm_obj.module_power_good_fd_path = module_fd_indep_path
+                module_sm_obj.module_power_good_fd_path = module_fd_hw_present_path
                 module_sm_obj.module_power_good_fd = module_power_good_fd
-                logger.log_info(f'reading sysfs {module_fd_indep_path} got value {val_int}')
+                logger.log_info(f'reading sysfs {module_fd_hw_present_path} got value {val_int}')
                 if 0 == val_int:
                     module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
                     return STATE_HW_NOT_PRESENT
                 elif 1 == val_int:
                     return STATE_MODULE_AVAILABLE
                 else:
-                    logger.log_error(f'unexpected value {val_int} from file {module_fd_indep_path}')
+                    logger.log_error(f'unexpected value {val_int} from file {module_fd_hw_present_path}')
                     module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
                     return STATE_HW_NOT_PRESENT
             except Exception as e:
                 logger.log_error("exception {} for port {}".format(e, port))
                 return STATE_HW_NOT_PRESENT
-        logger.log_error(f'port {port} has no power good file {module_fd_indep_path}')
+        logger.log_error(f'port {port} has no power good file {module_fd_hw_present_path}')
         module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
         return STATE_HW_NOT_PRESENT
 
     def check_if_power_on(self, port, module_sm_obj, dynamic=False):
         logger.log_debug(f'enter check_if_power_on for port {port}')
-        module_fd_indep_path = SYSFS_INDEPENDENT_FD_POWER_ON.format(port)
-        if os.path.isfile(module_fd_indep_path):
+        module_fd_hw_present_path = SYSFS_MODULE_FD_POWER_ON.format(port)
+        if os.path.isfile(module_fd_hw_present_path):
             try:
-                val_int = utils.read_int_from_file(module_fd_indep_path)
-                logger.log_info(f'reading sysfs {module_fd_indep_path} got value {val_int}')
+                val_int = utils.read_int_from_file(module_fd_hw_present_path)
+                logger.log_info(f'reading sysfs {module_fd_hw_present_path} got value {val_int}')
                 if 0 == val_int:
                     return STATE_NOT_POWERED
                 elif 1 == val_int:
                     return STATE_POWERED
                 else:
-                    logger.log_error(f'unexpected value {val_int} from file {module_fd_indep_path}')
+                    logger.log_error(f'unexpected value {val_int} from file {module_fd_hw_present_path}')
                     module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
                     return STATE_HW_NOT_PRESENT
             except Exception as e:
                 logger.log_error(f'check_if_power_on got exception {e}')
                 module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
                 return STATE_HW_NOT_PRESENT
-        logger.log_error(f'port {port} has no power on file {module_fd_indep_path}')
+        logger.log_error(f'port {port} has no power on file {module_fd_hw_present_path}')
         module_sm_obj.set_final_state(STATE_HW_NOT_PRESENT)
         return STATE_HW_NOT_PRESENT
 
@@ -478,18 +477,18 @@ class ModulesMgmtTask(threading.Thread):
     def power_on_module(self, port, module_sm_obj, dynamic=False):
         logger.log_debug(f'enter power_on_module for port {port}')
         if not module_sm_obj.wait_for_power_on:
-            module_fd_indep_path_po = SYSFS_INDEPENDENT_FD_POWER_ON.format(port)
-            module_fd_indep_path_r = SYSFS_INDEPENDENT_FD_HW_RESET.format(port)
+            module_fd_power_on_path = SYSFS_MODULE_FD_POWER_ON.format(port)
+            module_fd_reset_path = SYSFS_MODULE_FD_HW_RESET.format(port)
             try:
-                if os.path.isfile(module_fd_indep_path_po):
+                if os.path.isfile(module_fd_power_on_path):
                     # echo 1 > /sys/module/sx_core/$asic/$module/power_on
-                    utils.write_file(module_fd_indep_path_po, "1")
-                    logger.log_info(f'write sysfs {module_fd_indep_path_po} with value 1')
-                if os.path.isfile(module_fd_indep_path_r):
+                    utils.write_file(module_fd_power_on_path, "1")
+                    logger.log_info(f'write sysfs {module_fd_power_on_path} with value 1')
+                if os.path.isfile(module_fd_reset_path):
                     # de-assert hw_reset - low polarity. 1 for de-assert 0 for assert
                     # echo 1 > /sys/module/sx_core/$asic/$module/hw_reset
-                    utils.write_file(module_fd_indep_path_r, "1")
-                    logger.log_info(f'write sysfs {module_fd_indep_path_r} with value 1')
+                    utils.write_file(module_fd_reset_path, "1")
+                    logger.log_info(f'write sysfs {module_fd_reset_path} with value 1')
                 self.add_port_to_wait_reset(module_sm_obj)
             except Exception as e:
                 logger.log_error("exception in power_on_module {} for port {}".format(e, port))
@@ -507,7 +506,7 @@ class ModulesMgmtTask(threading.Thread):
             logger.log_info("check_module_type setting as FW control as xcvr_api is None for port {} module_sm_obj {}"
                             .format(port, module_sm_obj))
             return STATE_FW_CONTROL
-        # QSFP-DD ID is 24, OSFP ID is 25 - only these 2 are supported currently as independent module - SW controlled
+
         if not isinstance(xcvr_api, cmis.CmisApi):
             logger.log_info("check_module_type setting STATE_FW_CONTROL for {} in check_module_type port {} module_sm_obj {}"
                             .format(xcvr_api, port, module_sm_obj))
@@ -526,7 +525,7 @@ class ModulesMgmtTask(threading.Thread):
                 return STATE_POWER_LIMIT_ERROR
             else:
                 # first read the frequency support - if it's 1 then continue, if it's 0 no need to do anything
-                module_fd_freq_support_path = SYSFS_INDEPENDENT_FD_FREQ_SUPPORT.format(port)
+                module_fd_freq_support_path = SYSFS_MODULE_FD_FREQ_SUPPORT.format(port)
                 val_int = utils.read_int_from_file(module_fd_freq_support_path)
                 logger.log_info(f'reading sysfs {module_fd_freq_support_path} got value {val_int}')
                 if 1 == val_int:
@@ -541,9 +540,9 @@ class ModulesMgmtTask(threading.Thread):
                     logger.log_debug(f"check_module_type read mci max frequency bits {mci_bits} for port {port}")
                     # Then, set it to frequency Sysfs using:
                     # echo <val> > /sys/module/sx_core/$asic/$module/frequency //  val: 0 - up to 400KHz, 1 - up to 1MHz
-                    indep_fd_freq = SYSFS_INDEPENDENT_FD_FREQ.format(port)
-                    utils.write_file(indep_fd_freq, mci_bits)
-                    logger.log_info(f'write sysfs {indep_fd_freq} with value {mci_bits}')
+                    sysfs_module_frequency_path = SYSFS_MODULE_FD_FREQ.format(port)
+                    utils.write_file(sysfs_module_frequency_path, mci_bits)
+                    logger.log_info(f'write sysfs {sysfs_module_frequency_path} with value {mci_bits}')
                 logger.log_info(f"check_module_type port {port} setting STATE_SW_CONTROL")
                 return STATE_SW_CONTROL
 
@@ -556,9 +555,9 @@ class ModulesMgmtTask(threading.Thread):
         logger.log_debug("check_power_cap got powercap bytearray {} for port {} module_sm_obj {}".format(powercap_ba, port, module_sm_obj))
         powercap = int.from_bytes(powercap_ba, "big")
         logger.log_debug("check_power_cap got powercap {} for port {} module_sm_obj {}".format(powercap, port, module_sm_obj))
-        indep_fd_power_limit = self.get_sysfs_ethernet_port_fd(SYSFS_INDEPENDENT_FD_POWER_LIMIT, port)
-        cage_power_limit = utils.read_int_from_file(indep_fd_power_limit)
-        logger.log_info(f'reading sysfs {indep_fd_power_limit} got value {cage_power_limit}, power capability from EEPROM is {powercap}')
+        sysfs_module_power_limit_path = self.get_sysfs_ethernet_port_fd(SYSFS_MODULE_FD_POWER_LIMIT, port)
+        cage_power_limit = utils.read_int_from_file(sysfs_module_power_limit_path)
+        logger.log_info(f'reading sysfs {sysfs_module_power_limit_path} got value {cage_power_limit}, power capability from EEPROM is {powercap}')
         if powercap > int(cage_power_limit):
             logger.log_info("check_power_cap powercap {} != cage_power_limit {} for port {} module_sm_obj {}".format(powercap, cage_power_limit, port, module_sm_obj))
             module_sm_obj.set_final_state(STATE_POWER_LIMIT_ERROR)
@@ -573,9 +572,9 @@ class ModulesMgmtTask(threading.Thread):
         try:
             if state == STATE_FW_CONTROL:
                 # echo 0 > /sys/module/sx_core/$asic/$module/control
-                indep_fd_fw_control = SYSFS_INDEPENDENT_FD_FW_CONTROL.format(port)
-                utils.write_file(indep_fd_fw_control, "0")
-                logger.log_info(f'write sysfs {indep_fd_fw_control} with value 0')
+                module_fw_control_path = SYSFS_MODULE_FD_FW_CONTROL.format(port)
+                utils.write_file(module_fw_control_path, "0")
+                logger.log_info(f'write sysfs {module_fw_control_path} with value 0')
                 # update the presence sysfs fd to legacy FD presence, first close the previous fd
                 module_sm_obj.module_fd.close()
                 module_fd_legacy_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
@@ -704,12 +703,12 @@ class ModulesMgmtTask(threading.Thread):
         logger.log_debug(f"{detection_method} detection enter register_presence_closed_ports")
         for module_obj in module_obj_list:
             port = module_obj.port_num
-            if self.is_supported_indep_mods_system:
-                module_fd_indep_path = SYSFS_INDEPENDENT_FD_PRESENCE.format(port)
+            if self.is_cmis_mgmt_system:
+                module_fd_hw_present_path = SYSFS_MODULE_FD_HW_PRESENCE.format(port)
             else:
-                module_fd_indep_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
-            module_obj.set_module_fd_path(module_fd_indep_path)
-            module_fd = open(module_fd_indep_path, "r")
+                module_fd_hw_present_path = SYSFS_LEGACY_FD_PRESENCE.format(port)
+            module_obj.set_module_fd_path(module_fd_hw_present_path)
+            module_fd = open(module_fd_hw_present_path, "r")
             module_obj.set_module_fd(module_fd)
             logger.log_debug(f"{detection_method} registering fd {module_fd} fd name {module_fd.name} for port {port}")
             self.register_fd_for_polling(module_obj, module_fd, 'presence')
@@ -717,7 +716,7 @@ class ModulesMgmtTask(threading.Thread):
 class ModuleStateMachine(object):
 
     def __init__(self, port_num=0, initial_state=STATE_HW_NOT_PRESENT, current_state=STATE_HW_NOT_PRESENT
-                 , next_state=STATE_HW_NOT_PRESENT, final_state='', is_indep_module=False
+                 , next_state=STATE_HW_NOT_PRESENT, final_state='', is_sw_control=False
                  , module_fd_path='', module_fd=None, reset_start_time=None
                  , eeprom_poweron_reset_retries=1, module_power_good_fd_path=None, module_power_good_fd=None):
 
@@ -726,7 +725,7 @@ class ModuleStateMachine(object):
         self.current_state = current_state
         self.next_state = next_state
         self.final_state = final_state
-        self.is_indep_modules = is_indep_module
+        self.is_sw_controls = is_sw_control
         self.module_fd_path = module_fd_path
         self.module_fd = module_fd
         self.reset_start_time = reset_start_time
@@ -761,8 +760,8 @@ class ModuleStateMachine(object):
         self.set_current_state(self.next_state)
         self.next_state = ''
 
-    def set_is_indep_modules(self, is_indep_modules):
-        self.is_indep_modules = is_indep_modules
+    def set_is_sw_control_modules(self, is_sw_controls):
+        self.is_sw_controls = is_sw_controls
 
     def set_module_fd_path(self, module_fd_path):
         self.module_fd_path = module_fd_path
