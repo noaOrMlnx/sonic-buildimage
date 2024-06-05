@@ -1440,6 +1440,14 @@ class SFP(NvidiaSFPCommon):
     
     @classmethod
     def action_on_start(cls, sfp):
+
+        # a W/A to avoid setting hw_reset for service ports from type SFP.
+        # this W/A is relevant only for moose and hippo systems, and we will have it until FW will provide their fix.
+        if sfp.sdk_index >= 64:
+            logger.log_info(f'SFP {sfp.sdk_index} should be automatically FW control. Setting it as FW control as a W/A')
+            sfp.on_event(EVENT_FW_CONTROL)
+            return
+
         if sfp.get_control_type() == SFP_FW_CONTROL:
             logger.log_info(f'SFP {sfp.sdk_index} is already FW control, probably in warm reboot')
             sfp.on_event(EVENT_FW_CONTROL)
