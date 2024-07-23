@@ -22,6 +22,7 @@ SHELL = /bin/bash
 MAIN_TARGET = iproute2-mlnx_$(IPROUTE2_MLNX_VERSION_FULL)_$(CONFIGURED_ARCH).deb
 MLNX_SDK_DRIVERS_GITHUB_URL = https://github.com/Mellanox/Spectrum-SDK-Drivers
 SDK_TMPDIR := $(shell mktemp -d)
+TMP_SDK_VERSION = 4.7.1012
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	# Remove any stale files
@@ -30,15 +31,20 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	# Download iproute2 from debian repository
 	dget http://deb.debian.org/debian/pool/main/i/iproute2/iproute2_$(IPROUTE2_MLNX_VERSION_FULL).dsc
 
-ifneq ($(MLNX_SDK_SOURCE_BASE_URL), )
-	wget $(MLNX_SDK_SOURCE_BASE_URL)/code_package.zip
-	unzip code_package.zip -d $(SDK_TMPDIR)
-else
+# ifneq ($(MLNX_SDK_SOURCE_BASE_URL), )
+# 	wget $(MLNX_SDK_SOURCE_BASE_URL)/code_package.zip
+# 	unzip code_package.zip -d $(SDK_TMPDIR)
+# else
+# 	# Download SDK from upstream repository
+# 	wget $(MLNX_SDK_DRIVERS_GITHUB_URL)/archive/refs/heads/$(MLNX_SDK_VERSION).zip
+# 	unzip $(MLNX_SDK_VERSION).zip -d $(SDK_TMPDIR)
+# 	mv $(SDK_TMPDIR)/Spectrum-SDK-Drivers-$(MLNX_SDK_VERSION)/* $(SDK_TMPDIR)
+# endif
+
 	# Download SDK from upstream repository
-	wget $(MLNX_SDK_DRIVERS_GITHUB_URL)/archive/refs/heads/$(MLNX_SDK_VERSION).zip
-	unzip $(MLNX_SDK_VERSION).zip -d $(SDK_TMPDIR)
-	mv $(SDK_TMPDIR)/Spectrum-SDK-Drivers-$(MLNX_SDK_VERSION)/* $(SDK_TMPDIR)
-endif
+	wget $(MLNX_SDK_DRIVERS_GITHUB_URL)/archive/refs/heads/$(TMP_SDK_VERSION).zip
+	unzip $(TMP_SDK_VERSION).zip -d $(SDK_TMPDIR)
+	mv $(SDK_TMPDIR)/Spectrum-SDK-Drivers-$(TMP_SDK_VERSION)/* $(SDK_TMPDIR)
 
 	pushd iproute2-$(IPROUTE2_MLNX_VERSION)
 
