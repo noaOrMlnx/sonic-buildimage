@@ -1277,20 +1277,6 @@
                 "4x200G[100G]": ["etp64a", "etp64b", "etp64c", "etp64d"],
                 "8x100G[50G]": ["etp64a", "etp64b", "etp64c", "etp64d", "etp64e", "etp64f", "etp64g", "etp64h"]
             }
-        },
-        "Ethernet512": {
-            "index": "65",
-            "lanes": "512",
-            "breakout_modes": {
-                "1x25G[10G]": ["etp65"]
-            }
-        },
-        "Ethernet520": {
-            "index": "66",
-            "lanes": "520",
-            "breakout_modes": {
-                "1x25G[10G]": ["etp66"]
-            }
         }
     }
 }
