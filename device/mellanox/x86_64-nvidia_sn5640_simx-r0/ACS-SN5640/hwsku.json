@@ -123,7 +123,7 @@
         "Ethernet320": {
             "default_brkout_mode": "8x100G[50G]"
         },
-        "Ethernet324": {
+        "Ethernet328": {
             "default_brkout_mode": "8x100G[50G]"
         },
         "Ethernet336": {
