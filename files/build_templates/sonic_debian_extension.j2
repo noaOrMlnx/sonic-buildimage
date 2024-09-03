@@ -1081,7 +1081,12 @@ sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable nv-syncd-shared
 # Install required packages specific for mellanox platform
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install minicom xmlstarlet
 
-sudo LANG=C chroot $FILESYSTEM_ROOT systemctl disable rshim.service
+# Install rshim script
+sudo install -m 755 platform/mellanox/rshim/files/rshim.sh $FILESYSTEM_ROOT/usr/bin/rshim.sh
+
+# Install rshim services
+sudo cp platform/mellanox/rshim/files/rshim@.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM/
+sudo cp platform/mellanox/rshim/files/rshim-manager.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM/
 {% endif %}
 
 {% if sonic_asic_platform == "nvidia-bluefield" %}
