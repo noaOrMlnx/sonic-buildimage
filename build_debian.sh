@@ -839,6 +839,24 @@ sudo mkdir -p $FILESYSTEM_ROOT/var/lib/docker
 sudo rm -f $FILESYSTEM_ROOT/etc/resolvconf/resolv.conf.d/original
 sudo cp files/image_config/resolv-config/resolv.conf.head $FILESYSTEM_ROOT/etc/resolvconf/resolv.conf.d/head
 
+## Add debug messages in DNS
+filename="$FILESYSTEM_ROOT/sbin/resolvconf"
+sudo sed -i '/report_err \"Run lock held by another process for longer than $LOCK_WAIT_S seconds\"; exit 1; /a \    echo \"${MYNAME} Run lock obtained by PID $$, PPID $PPID\" >&2 ;' $filename
+sudo sed -i '/: >| \"$ENABLE_UPDATES_FLAGFILE\" || exit 1/c\	: >| \"$ENABLE_UPDATES_FLAGFILE\" || { report_err \"Unable to create ENABLE_UPDATES_FLAGFILE\"; exit 1 ; }' $filename
+sudo sed -i '/rm -f "$ENABLE_UPDATES_FLAGFILE" || exit 1/c\	rm -f \"$ENABLE_UPDATES_FLAGFILE\" || { report_err \"Unable to remove ENABLE_UPDATES_FLAGFILE\"; exit 1 ; }' $filename
+repl_text="{ report_err \"ENABLE_UPDATES_FLAGFILE does not exist\"; exit 1; }"
+sudo awk -v replacement="$repl_text" '
+    {
+        count += gsub(/exit 1/, "exit 1")
+        if (count > 11 && sub(/exit 1/, replacement)){
+            count = -999
+        }
+        print
+    }
+    ' "$filename" > temp_file && sudo mv temp_file "$filename"
+sudo chmod +x $filename
+
+
 ## Optimize filesystem size
 if [ "$BUILD_REDUCE_IMAGE_SIZE" = "y" ]; then
    sudo scripts/build-optimize-fs-size.py "$FILESYSTEM_ROOT" \
