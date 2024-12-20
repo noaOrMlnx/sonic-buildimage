@@ -16,7 +16,7 @@
     limitations under the License.
 #}
 
-{%- macro generate_dscp_to_tc_map_mandatory() -%}
+{%- macro generate_dscp_to_tc_map_per_sku() -%}
     "DSCP_TO_TC_MAP": {
         "AZURE": {
             "0" : "0",
@@ -86,7 +86,7 @@
         }
     },
 {%- endmacro -%}
-{%- macro generate_tc_to_pg_map_mandatory() -%}
+{%- macro generate_tc_to_pg_map_per_sku() -%}
     "TC_TO_PRIORITY_GROUP_MAP": {
         "AZURE": {
             "0": "0",
@@ -101,7 +101,7 @@
     },
 {%- endmacro -%}
 
-{%- macro generate_scheduler_mandatory() -%}
+{%- macro generate_scheduler_per_sku() -%}
     "SCHEDULER": {
         "scheduler.0": {
             "type"  : "DWRR",
@@ -118,7 +118,7 @@
     },
 {%- endmacro -%}
 
-{%- macro generate_single_queue_mandatory(port) -%}
+{%- macro generate_single_queue_per_sku(port) -%}
         "{{ port }}|0": {
             "scheduler": "scheduler.0"
         },
