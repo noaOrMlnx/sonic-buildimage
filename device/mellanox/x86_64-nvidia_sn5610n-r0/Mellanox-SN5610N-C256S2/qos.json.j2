@@ -1,6 +1,6 @@
 {#
     SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-    Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+    Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
     Apache-2.0
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,154 +16,207 @@
     limitations under the License.
 #}
 
-{%- macro generate_dscp_to_tc_map_per_sku() -%}
-    "DSCP_TO_TC_MAP": {
-        "AZURE": {
-            "0" : "0",
-            "1" : "1",
-            "2" : "2",
-            "3" : "3",
-            "4" : "4",
-            "5" : "1",
-            "6" : "6",
-            "7" : "1",
-            "8" : "0",
-            "9" : "1",
-            "10": "1",
-            "11": "1",
-            "12": "1",
-            "13": "1",
-            "14": "1",
-            "15": "1",
-            "16": "1",
-            "17": "1",
-            "18": "1",
-            "19": "1",
-            "20": "1",
-            "21": "1",
-            "22": "1",
-            "23": "1",
-            "24": "1",
-            "25": "1",
-            "26": "1",
-            "27": "1",
-            "28": "1",
-            "29": "1",
-            "30": "1",
-            "31": "1",
-            "32": "1",
-            "33": "1",
-            "34": "1",
-            "35": "1",
-            "36": "1",
-            "37": "1",
-            "38": "1",
-            "39": "1",
-            "40": "1",
-            "41": "1",
-            "42": "1",
-            "43": "1",
-            "44": "1",
-            "45": "5",
-            "46": "1",
-            "47": "1",
-            "48": "7",
-            "49": "1",
-            "50": "1",
-            "51": "1",
-            "52": "1",
-            "53": "1",
-            "54": "1",
-            "55": "1",
-            "56": "1",
-            "57": "1",
-            "58": "1",
-            "59": "1",
-            "60": "1",
-            "61": "1",
-            "62": "1",
-            "63": "1"
-        }
-    },
-{%- endmacro -%}
-{%- macro generate_tc_to_pg_map_per_sku() -%}
-    "TC_TO_PRIORITY_GROUP_MAP": {
-        "AZURE": {
-            "0": "0",
-            "1": "0",
-            "2": "0",
-            "3": "0",
-            "4": "0",
-            "5": "0",
-            "6": "0",
-            "7": "0"
-        }
-    },
-{%- endmacro -%}
-
-{%- macro generate_scheduler_per_sku() -%}
-    "SCHEDULER": {
-        "scheduler.0": {
-            "type"  : "DWRR",
-            "weight": "1"
+{%- macro generate_buffer_pool_and_profiles_with_inactive_ports(port_names_inactive) %}
+    "BUFFER_POOL": {
+        {% if dynamic_mode is not defined and port_names_inactive|length > 0 -%}
+        "ingress_zero_pool" : {
+            "mode": "static",
+            "type": "ingress",
+            "size": "0"
         },
-        "scheduler.1": {
-            "type"  : "DWRR",
-            "weight": "5"
+        {% endif -%}
+        "ingress_lossless_pool": {
+            {% if dynamic_mode is not defined -%}
+            "size": "{{ ingress_lossless_pool_size }}",
+            {% endif -%}
+            "type": "ingress",
+            "mode": "dynamic"
         },
-        "scheduler.2": {
-            "type"  : "DWRR",
-            "weight": "90"
+        "egress_lossless_pool": {
+            "size": "{{ egress_lossless_pool_size }}",
+            "type": "egress",
+            "mode": "dynamic"
+        },
+        "egress_lossy_pool": {
+            {% if dynamic_mode is not defined -%}
+            "size": "{{ egress_lossy_pool_size }}",
+            {% endif -%}
+            "type": "egress",
+            "mode": "dynamic"
         }
     },
-{%- endmacro -%}
+    "BUFFER_PROFILE": {
+        {% if dynamic_mode is not defined and port_names_inactive|length > 0 -%}
+        "ingress_lossy_pg_zero_profile" : {
+          "pool":"ingress_zero_pool",
+          "size":"0",
+          "static_th":"0"
+        },
+        "ingress_lossless_zero_profile" : {
+          "pool":"ingress_lossless_pool",
+          "size":"0",
+          "dynamic_th":"-8"
+        },
+        "egress_lossless_zero_profile" : {
+          "pool":"egress_lossless_pool",
+          "size":"0",
+          "dynamic_th":"-8"
+        },
+        "egress_lossy_zero_profile" : {
+          "pool":"egress_lossy_pool",
+          "size":"0",
+          "dynamic_th":"-8"
+        },
+        {% endif -%}
+        "ingress_lossy_profile": {
+            "pool":"ingress_lossless_pool",
+            "size":"0",
+            "dynamic_th":"3"
+        },
+        "egress_lossless_profile": {
+            "pool":"egress_lossless_pool",
+            "size":"0",
+            "dynamic_th":"7"
+        },
+        "egress_lossy_profile": {
+            "pool":"egress_lossy_pool",
+            "size":"9216",
+            "dynamic_th":"7"
+        },
+        "q_lossy_profile": {
+            "pool":"egress_lossy_pool",
+            "size":"0",
+            "dynamic_th":"0"
+        },
+        "q_lossy_minus_7_profile": {
+            "pool": "egress_lossy_pool",
+            "size": "0",
+            "dynamic_th" : "-7"
+        },
+        "q_lossy_minus_3_profile": {
+            "pool": "egress_lossy_pool",
+            "size": "0",
+            "dynamic_th" : "-3"
+        }
+    },
+{%- endmacro %}
 
-{%- macro generate_single_queue_per_sku(port) -%}
+{%- macro generate_profile_lists(port_names_active, port_names_inactive) %}
+    "BUFFER_PORT_INGRESS_PROFILE_LIST": {
+{% for port in port_names_active.split(',') %}
+        "{{ port }}": {
+            "profile_list" : "ingress_lossless_profile,ingress_lossy_profile"
+        }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% if port_names_inactive|length > 0 %}
+,
+{% for port in port_names_inactive.split(',') %}
+        "{{ port }}": {
+{% if dynamic_mode is defined %}
+            "profile_list" : "ingress_lossless_profile,ingress_lossy_profile"
+{% else %}
+            "profile_list" : "ingress_lossless_zero_profile,ingress_lossy_zero_profile"
+{% endif %}
+        }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %}
+    },
+    "BUFFER_PORT_EGRESS_PROFILE_LIST": {
+{% for port in port_names_active.split(',') %}
+        "{{ port }}": {
+            "profile_list" : "egress_lossless_profile,egress_lossy_profile"
+        }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% if port_names_inactive|length > 0 %}
+,
+{% for port in port_names_inactive.split(',') %}
+        "{{ port }}": {
+{% if dynamic_mode is defined %}
+            "profile_list" : "egress_lossless_profile,egress_lossy_profile"
+{% else %}
+            "profile_list" : "egress_lossless_zero_profile,egress_lossy_zero_profile"
+{% endif %}
+        }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %}
+    }
+{%- endmacro %}
+
+{%- macro generate_queue_buffers(port_names_active, port_names_inactive) %}
+
+{% if dynamic_mode is not defined %}
+{% for port in port_names_active.split(',') %}
         "{{ port }}|0": {
-            "scheduler": "scheduler.0"
+            "profile" : "q_lossy_profile"
         },
-        "{{ port }}|1": {
-            "scheduler": "scheduler.2"
+{% endfor %}
+{% for port in port_names_active.split(',') %}
+        "{{ port }}|1-2": {
+            "profile" : "q_lossy_minus_7_profile"
         },
-        "{{ port }}|2": {
-            "scheduler": "scheduler.0"
-        },
+{% endfor %}
+{% for port in port_names_active.split(',') %}
         "{{ port }}|3": {
-            "scheduler": "scheduler.0"
+            "profile" : "q_lossy_profile"
         },
+{% endfor %}
+{% for port in port_names_active.split(',') %}
         "{{ port }}|4": {
-            "scheduler": "scheduler.0"
+            "profile" : "q_lossy_minus_3_profile"
         },
-        "{{ port }}|5": {
-            "scheduler": "scheduler.1"
-        },
-        "{{ port }}|6": {
-            "scheduler": "scheduler.0"
-        }
-{%- endmacro -%}
+{% endfor %}
+{% for port in port_names_active.split(',') %}
+        "{{ port }}|5-6": {
+            "profile" : "q_lossy_profile"
+        }{% if not loop.last %},{% endif %}
 
-{%- macro generate_global_dscp_to_tc_map() %}
-{# This is an empty macro since the global DSCP_TO_TC map is not required #}
+{% endfor %}
+{% if port_names_inactive|length > 0 %}
+{% for port in port_names_inactive.split(',') %}
+        "{{ port }}|1-6": {
+            "profile" : "egress_lossy_zero_profile"
+        }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %}
+{% endif %}
+    }
 {%- endmacro %}
 
-{%- macro generate_wred_profiles() %}
-    "WRED_PROFILE": {
-        "AZURE_LOSSLESS" : {
-            "wred_green_enable"      : "true",
-            "wred_yellow_enable"     : "true",
-            "wred_red_enable"        : "true",
-            "ecn"                    : "ecn_all",
-            "green_max_threshold"    : "10000000",
-            "green_min_threshold"    : "2000000",
-            "yellow_max_threshold"   : "10000000",
-            "yellow_min_threshold"   : "2000000",
-            "red_max_threshold"      : "10000000",
-            "red_min_threshold"      : "2000000",
-            "green_drop_probability" : "5",
-            "yellow_drop_probability": "5",
-            "red_drop_probability"   : "5"
-        }
-    },
-{%- endmacro %}
+{%- macro generate_pg_profiles(port_names_active, port_names_inactive) %}
+    "BUFFER_PG": {
+{% for port in port_names_active.split(',') %}
+{% if dynamic_mode is defined %}
+        "{{ port }}|3-4": {
+            "profile" : "NULL"
+        },
+{% endif %}
+        "{{ port }}|0": {
+            "profile" : "ingress_lossy_profile"
+        }{% if not loop.last %},{% endif %}
 
-{%- include 'qos_config.j2' %}
+{% endfor %}
+{% if port_names_inactive|length > 0 %}
+{%- for port in port_names_inactive.split(',') %}
+       {%- if loop.first -%},{%- endif -%}
+{% if dynamic_mode is defined %}
+        "{{ port }}|3-4": {
+            "profile" : "NULL"
+        },
+{% endif %}
+       "{{ port }}|0": {
+{% if dynamic_mode is defined %}
+            "profile" : "ingress_lossy_profile"
+{% else %}
+            "profile" : "ingress_lossy_pg_zero_profile"
+{% endif %}
+        }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+{% endif %}
+    }
+{%- endmacro %}
