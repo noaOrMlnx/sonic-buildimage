@@ -59,4 +59,3 @@
 0077-frr-vtysh-dependencies-for-srv6-static-patches.patch
 0078-vtysh-de-conditionalize-and-reorder-install-node.patch
 0079-staticd-add-support-for-srv6.patch
-0081-bgpd-Optimize-evaluate-paths-for-a-peer-going-down.patch
