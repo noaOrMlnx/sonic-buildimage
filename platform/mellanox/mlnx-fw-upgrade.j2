@@ -204,7 +204,7 @@ function UnlockStateChange() {
 }
 
 function GetMstDeviceType() {
-    local -r asic_type=$(GetAsicType)
+    local -r asic_type=$(/usr/bin/asic_detect/asic_detect.sh)
 
     case $asic_type in
     ${SPC1_ASIC}|${SPC2_ASIC}|${SPC3_ASIC}|${SPC4_ASIC})
@@ -412,7 +412,7 @@ function GetAvailableFwVersion() {
 function UpgradeFW() {
     local -r _FW_BIN_PATH="$1"
 
-    local -r _ASIC_TYPE="$(GetAsicType)"
+    local -r _ASIC_TYPE="$(/usr/bin/asic_detect/asic_detect.sh)"
     if [[ "${_ASIC_TYPE}" = "${UNKN_ASIC}" ]]; then
         ExitFailure "failed to detect ASIC type"
     fi
