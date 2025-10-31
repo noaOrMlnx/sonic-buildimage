@@ -31,6 +31,7 @@ try:
     from functools import reduce
     from .utils import extract_RJ45_ports_index
     from .utils import extract_cpo_ports_index
+    from .utils import extract_asic_id_map
     from . import module_host_mgmt_initializer
     from . import utils
     from .device_data import DeviceDataManager
@@ -124,6 +125,8 @@ class Chassis(ChassisBase):
         # Build the CPO port list from platform.json and hwsku.json
         self._cpo_port_inited = False
         self._cpo_port_list = None
+        # Mapping from SFP index to ASIC ID
+        self._asic_id_map = None
 
         Chassis.chassis_instance = self
 
@@ -274,6 +277,13 @@ class Chassis(ChassisBase):
     # SFP methods
     ##############################################
 
+    def _get_asic_id_by_sfp_index(self, sfp_index):
+        if not DeviceDataManager.is_multi_asic_platform():
+            return 'asic0'
+        if not self._asic_id_map:
+            self._asic_id_map = extract_asic_id_map(DeviceDataManager.get_asic_count())
+        return f'asic{self._asic_id_map.get(sfp_index)}'
+
     def _import_sfp_module(self):
         if not self.sfp_module:
             from . import sfp as sfp_module
@@ -293,12 +303,13 @@ class Chassis(ChassisBase):
 
                     if not self._sfp_list[index]:
                         sfp_module = self._import_sfp_module()
+                        asic_id = self._get_asic_id_by_sfp_index(index)
                         if self.RJ45_port_list and index in self.RJ45_port_list:
-                            self._sfp_list[index] = sfp_module.RJ45Port(index)
+                            self._sfp_list[index] = sfp_module.RJ45Port(index, asic_id=asic_id)
                         elif self.cpo_port_list and index in self.cpo_port_list:
-                            self._sfp_list[index] = sfp_module.CpoPort(index)
+                            self._sfp_list[index] = sfp_module.CpoPort(index, asic_id=asic_id)
                         else:
-                            self._sfp_list[index] = sfp_module.SFP(index)
+                            self._sfp_list[index] = sfp_module.SFP(index, asic_id=asic_id)
                         self.sfp_initialized_count += 1
 
     def initialize_sfp(self):
@@ -312,24 +323,26 @@ class Chassis(ChassisBase):
                     if not self._sfp_list:
                         sfp_module = self._import_sfp_module()
                         for index in range(sfp_count):
+                            asic_id = self._get_asic_id_by_sfp_index(index)
                             if self.RJ45_port_list and index in self.RJ45_port_list:
-                                sfp_object = sfp_module.RJ45Port(index)
+                                sfp_object = sfp_module.RJ45Port(index, asic_id=asic_id)
                             elif self.cpo_port_list and index in self.cpo_port_list:
-                                sfp_object = sfp_module.CpoPort(index)
+                                sfp_object = sfp_module.CpoPort(index, asic_id=asic_id)
                             else:
-                                sfp_object = sfp_module.SFP(index)
+                                sfp_object = sfp_module.SFP(index, asic_id=asic_id)
                             self._sfp_list.append(sfp_object)
                         self.sfp_initialized_count = sfp_count
                     elif self.sfp_initialized_count != len(self._sfp_list):
                         sfp_module = self._import_sfp_module()
                         for index in range(len(self._sfp_list)):
                             if self._sfp_list[index] is None:
+                                asic_id = self._get_asic_id_by_sfp_index(index)
                                 if self.RJ45_port_list and index in self.RJ45_port_list:
-                                    self._sfp_list[index] = sfp_module.RJ45Port(index)
+                                    self._sfp_list[index] = sfp_module.RJ45Port(index, asic_id=asic_id)
                                 elif self.cpo_port_list and index in self.cpo_port_list:
-                                    self._sfp_list[index] = sfp_module.CpoPort(index)
+                                    self._sfp_list[index] = sfp_module.CpoPort(index, asic_id=asic_id)
                                 else:
-                                    self._sfp_list[index] = sfp_module.SFP(index)
+                                    self._sfp_list[index] = sfp_module.SFP(index, asic_id=asic_id)
                         self.sfp_initialized_count = len(self._sfp_list)
 
     def get_num_sfps(self):
@@ -471,6 +484,11 @@ class Chassis(ChassisBase):
             for s in self._sfp_list:
                 fds = s.get_fds_for_poling()
                 for fd_type, fd in fds.items():
+                    if fd is None:
+                        self.poll_obj = None
+                        self.registered_fds = {}
+                        logger.log_warning('SFPs are not initialized, too early to get change event')
+                        return True, {'sfp': {}}
                     self.poll_obj.register(fd, select.POLLERR | select.POLLPRI)
                     self.registered_fds[fd.fileno()] = (s.sdk_index, fd, fd_type)
 
@@ -496,7 +514,11 @@ class Chassis(ChassisBase):
                 sfp_index, fd, fd_type = self.registered_fds[fileno]
                 s = self._sfp_list[sfp_index]
                 fd.seek(0)
-                fd_value = int(fd.read().strip())
+                try:
+                    fd_value = int(fd.read().strip())
+                except Exception as e:
+                    logger.log_warning(f'Failed to read value from file {fd_type} for SFP {sfp_index}: {e}')
+                    continue
 
                 # Detecting dummy event
                 if s.is_dummy_event(fd_type, fd_value):
@@ -592,6 +614,13 @@ class Chassis(ChassisBase):
             self.sfp_states_before_first_poll = {}
             for s in self._sfp_list:
                 fd = s.get_fd_for_polling_legacy()
+                if fd is None:
+                    self.poll_obj = None
+                    self.registered_fds = {}
+                    self.sfp_states_before_first_poll = {}
+                    logger.log_warning('SFPs are not initialized, too early to get change event')
+                    return True, {'sfp': {}}
+
                 self.poll_obj.register(fd, select.POLLERR | select.POLLPRI)
                 self.registered_fds[fd.fileno()] = (s.sdk_index, fd)
                 self.sfp_states_before_first_poll[s.sdk_index] = s.get_module_status()
@@ -616,7 +645,12 @@ class Chassis(ChassisBase):
                 
                 sfp_index, fd = self.registered_fds[fileno]
                 fd.seek(0)
-                fd.read()
+                try:
+                    fd.read()
+                except Exception as e:
+                    logger.log_warning(f'Failed to read module sysfs fd for SFP {sfp_index}: {e}')
+                    continue
+
                 s = self._sfp_list[sfp_index]
                 sfp_status = s.get_module_status()
 

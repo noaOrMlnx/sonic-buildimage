@@ -20,10 +20,12 @@ import glob
 import os
 import time
 import re
+from pathlib import Path
 from enum import Enum
 
 from . import utils
 from sonic_py_common.general import check_output_pipe
+from swsscommon import swsscommon
 
 DEFAULT_WD_PERIOD = 65535
 
@@ -211,6 +213,7 @@ DEVICE_DATA = {
 
 
 class DeviceDataManager:
+
     @classmethod
     @utils.read_only_cache()
     def get_platform_name(cls):
@@ -383,22 +386,49 @@ class DeviceDataManager:
     @classmethod
     def wait_platform_ready(cls):
         """
-        Wait for Nvidia platform related services(SDK, hw-management) ready
+        Legacy function for backward compatibility
+        """
+        return True
+
+    @classmethod
+    def check_sysfs_access(cls, path):
+        try:
+            p = Path(path)
+            if not p.exists():
+                return False
+            if p.is_dir():
+                return True
+            with open(path, "r") as f:
+                f.read()
+            return True
+        except:
+            return False
+
+    @classmethod
+    def wait_sysfs_ready(cls, modules_count, check_eeprom=False, check_temperature=False, timeout=300, interval=1):
+        """
+        Wait for sysfs nodes of modules to be ready before proceeding.
         Returns:
             bool: True if wait success else timeout
         """
-        conditions = []
+
         sysfs_nodes = ['power_mode', 'power_mode_policy', 'present', 'reset', 'status', 'statuserror']
         if cls.is_module_host_management_mode():
             sysfs_nodes.extend(['control', 'frequency', 'frequency_support', 'hw_present', 'hw_reset',
-                                'power_good', 'power_limit', 'power_on', 'temperature/input'])
-        else:
-            conditions.append(lambda: utils.read_int_from_file('/var/run/hw-management/config/asics_init_done') == 1)
-        sfp_count = cls.get_sfp_count()
-        for sfp_index in range(sfp_count):
+                                'power_good', 'power_limit', 'power_on'])
+
+        if check_temperature:
+            sysfs_nodes.extend(['temperature/input', 'temperature/threshold_hi', 'temperature/threshold_critical_hi'])
+
+        if check_eeprom:
+            sysfs_nodes.extend(['eeprom/'])
+
+        conditions = []
+        for sfp_index in range(modules_count):
             for sysfs_node in sysfs_nodes:
-                conditions.append(lambda: os.path.exists(f'/sys/module/sx_core/asic0/module{sfp_index}/{sysfs_node}'))
-        return utils.wait_until_conditions(conditions, 300, 1)
+                conditions.append(lambda idx=sfp_index, node=sysfs_node: cls.check_sysfs_access(f'/sys/module/sx_core/asic0/module{idx}/{node}'))
+
+        return utils.wait_until_conditions(conditions, timeout, interval)
 
     @classmethod
     @utils.read_only_cache()
@@ -425,3 +455,14 @@ class DeviceDataManager:
             return None
 
         return sfp_data.get('fw_control_ports')
+
+    @classmethod
+    @utils.read_only_cache()
+    def get_asic_count(cls):
+        from sonic_py_common import device_info
+        return device_info.get_num_npus()
+
+    @classmethod
+    @utils.read_only_cache()
+    def is_multi_asic_platform(cls):
+        return cls.get_asic_count() > 1
