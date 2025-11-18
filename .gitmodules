@@ -12,7 +12,7 @@
 	branch = 202412
 [submodule "sonic-swss"]
 	path = src/sonic-swss
-	url = https://github.com/Azure/sonic-swss.msft
+	url = https://github.com/nvidia-sonic/sonic-swss
 	branch = 202412
 [submodule "src/p4c-bm/p4c-bm"]
 	path = platform/p4/p4c-bm/p4c-bm
@@ -37,7 +37,7 @@
 	url = https://github.com/p4lang/ptf.git
 [submodule "src/sonic-utilities"]
 	path = src/sonic-utilities
-	url = https://github.com/Azure/sonic-utilities.msft
+	url = https://github.com/nvidia-sonic/sonic-utilities
 	branch = 202412
 [submodule "platform/broadcom/sonic-platform-modules-arista"]
 	path = platform/broadcom/sonic-platform-modules-arista
