@@ -507,7 +507,7 @@ class Chassis(ChassisBase):
                 else:
                     logger.log_debug(f'SFP {sfp_index} does not reach stable state, state={s.state}')
                     
-            ready_sfp_set = wait_ready_task.get_ready_set()
+            ready_sfp_set, failed_sfp_set = wait_ready_task.get_finished_set()
             for sfp_index in ready_sfp_set:
                 s = self._sfp_list[sfp_index]
                 s.on_event(sfp.EVENT_RESET_DONE)
@@ -517,6 +517,12 @@ class Chassis(ChassisBase):
                     s.refresh_poll_obj(self.poll_obj, self.registered_fds)
                 else:
                     logger.log_error(f'SFP {sfp_index} failed to reach stable state, state={s.state}')
+                    
+            for sfp_index in failed_sfp_set:
+                s = self._sfp_list[sfp_index]
+                s.on_event(sfp.EVENT_WAIT_SFP_READY_FAILED)
+                s.fill_change_event(port_dict)
+                s.refresh_poll_obj(self.poll_obj, self.registered_fds)
                     
             if port_dict:
                 logger.log_notice(f'Sending SFP change event: {port_dict}, error event: {error_dict}')

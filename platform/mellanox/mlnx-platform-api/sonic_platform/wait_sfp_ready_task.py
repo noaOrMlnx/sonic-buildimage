@@ -16,6 +16,9 @@
 # limitations under the License.
 #
 
+from typing import Any
+
+
 import copy
 import threading
 import time
@@ -23,6 +26,38 @@ from sonic_py_common.logger import Logger
 
 logger = Logger()
 EMPTY_SET = set()
+
+
+JOB_STATUS_WAITING = 1
+JOB_STATUS_DONE = 2
+JOB_STATUS_TIMEOUT = 3
+
+class WaitSfpReadyJob:
+    FIRMWARE_LOAD_TIME = 3
+    EEPROM_READY_TIME = 5
+
+    def __init__(self, sfp_object):
+        self.sfp_object = sfp_object
+        now = time.monotonic()
+        self.firmware_ready_time = now + self.FIRMWARE_LOAD_TIME
+        self.eeprom_ready_time = self.firmware_ready_time + self.EEPROM_READY_TIME
+        self.status = JOB_STATUS_WAITING
+        self.error = None
+        logger.log_debug(f'SFP {sfp_object.sdk_index} is scheduled for waiting reset done')
+        
+    def check_done(self, now):
+        if now <= self.firmware_ready_time:
+            self.status = JOB_STATUS_WAITING
+        else:
+            if now > self.eeprom_ready_time:
+                self.status = JOB_STATUS_TIMEOUT
+            else:
+                ready, self.error = self.sfp_object.is_sfp_ready()
+                self.status = JOB_STATUS_DONE if ready else JOB_STATUS_WAITING
+        return self.status
+                
+    def get_sfp_index(self):
+        return self.sfp_object.sdk_index
 
 
 class WaitSfpReadyTask(threading.Thread):
@@ -46,8 +81,11 @@ class WaitSfpReadyTask(threading.Thread):
         # A list of SFP to be waited. Key is SFP index, value is the expire time.
         self._wait_dict = {}
         
-        # The queue to store those SFPs who finish loading firmware.
+        # The queue to store those SFPs who finish waiting SFP ready
         self._ready_set = set()
+        
+        # The queue to store those SFPs who failed to wait SFP ready
+        self._fail_set = set()
         
     def stop(self):
         """Stop the task, only used in unit test
@@ -55,18 +93,18 @@ class WaitSfpReadyTask(threading.Thread):
         self.running = False
         self.event.set()
         
-    def schedule_wait(self, sfp_index):
+    def schedule_wait(self, job):
         """Add a SFP to the wait list
 
         Args:
             sfp_index (int): the index of the SFP object
         """
-        logger.log_debug(f'SFP {sfp_index} is scheduled for waiting reset done')
+        
         with self.lock:
             is_empty = len(self._wait_dict) == 0
   
             # The item will be expired in 3 seconds
-            self._wait_dict[sfp_index] = time.monotonic() + self.WAIT_TIME
+            self._wait_dict[job.get_sfp_index()] = job
 
         if is_empty:
             logger.log_debug('An item arrives, wake up WaitSfpReadyTask')
@@ -79,14 +117,16 @@ class WaitSfpReadyTask(threading.Thread):
         Args:
             sfp_index (int): the index of the SFP object
         """
-        logger.log_debug(f'SFP {sfp_index} is canceled for waiting reset done')
+        logger.log_debug(f'SFP {sfp_index} is canceled job')
         with self.lock:
             if sfp_index in self._wait_dict:
                 self._wait_dict.pop(sfp_index)
             if sfp_index in self._ready_set:
                 self._ready_set.pop(sfp_index)
+            if sfp_index in self._fail_set:
+                self._fail_set.pop(sfp_index)
                 
-    def get_ready_set(self):
+    def get_finished_set(self):
         """Get ready set and clear it
 
         Returns:
@@ -94,10 +134,16 @@ class WaitSfpReadyTask(threading.Thread):
         """
         with self.lock:
             if not self._ready_set:
-                return EMPTY_SET
-            ready_set = copy.deepcopy(self._ready_set)
+                ready_set = EMPTY_SET
+            else:
+                ready_set = copy.deepcopy(self._ready_set)
+            if not self._fail_set:
+                fail_set = EMPTY_SET
+            else:
+                fail_set = copy.deepcopy(self._fail_set)
             self._ready_set.clear()
-        return ready_set
+            self._fail_set.clear()
+        return ready_set, fail_set
             
     def empty(self):
         """Indicate if wait_dict is empty
@@ -124,15 +170,18 @@ class WaitSfpReadyTask(threading.Thread):
             now = time.monotonic()
             with self.lock:
                 logger.log_debug(f'Processing wait SFP dict: {self._wait_dict}, now={now}')
-                for sfp_index, expire_time in self._wait_dict.items():
-                    # If now time is greater than the expire time, remove
-                    # the item from wait_dict
-                    if now >= expire_time:
+                for sfp_index, job in self._wait_dict.items():
+                    job_status = job.check_done(now)
+                    if job_status == JOB_STATUS_TIMEOUT:
                         pending_remove_set.add(sfp_index)
+                        self._fail_set.add(sfp_index)
+                        logger.log_error(f'SFP {sfp_index} failed to wait SFP ready: {job.error}')
+                    elif job_status == JOB_STATUS_DONE:
+                        pending_remove_set.add(sfp_index)
+                        self._ready_set.add(sfp_index)
 
                 for sfp_index in pending_remove_set:
                     self._wait_dict.pop(sfp_index)
-                    self._ready_set.add(sfp_index)
                     
                 is_empty = (len(self._wait_dict) == 0)
                     

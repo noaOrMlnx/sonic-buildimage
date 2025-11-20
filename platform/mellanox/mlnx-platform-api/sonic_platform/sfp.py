@@ -35,6 +35,7 @@ try:
     from sonic_py_common.general import check_output_pipe
     from . import utils
     from .device_data import DeviceDataManager
+    from . import wait_sfp_ready_task
     from sonic_platform_base.sonic_xcvr.sfp_optoe_base import SfpOptoeBase
     from sonic_platform_base.sonic_xcvr.fields import consts
     from sonic_platform_base.sonic_xcvr.api.public import cmis, sff8636, sff8436
@@ -219,6 +220,7 @@ STATE_FW_CONTROL = 'Firmware Control'           # Module is under firmware contr
 STATE_POWER_BAD = 'Power Bad'                   # Module power_good returns 0
 STATE_POWER_LIMIT_ERROR = 'Exceed Power Limit'  # Module power exceeds cage power limit
 STATE_NOT_PRESENT = 'Not Present'               # Module is not present
+STATE_NOT_READY = 'Not Ready'                   # Module is not ready
 
 EVENT_START = 'Start'
 EVENT_NOT_PRESENT = 'Not Present'
@@ -231,6 +233,7 @@ EVENT_FW_CONTROL = 'Firmware Control'
 EVENT_POWER_LIMIT_EXCEED = 'Power Limit Exceed'
 EVENT_POWER_GOOD = 'Power Good'
 EVENT_PRESENT = 'Present'
+EVENT_WAIT_SFP_READY_FAILED = 'Wait SFP Ready Failed'
 
 ACTION_ON_START = 'On Start'
 ACTION_ON_RESET = 'On Reset'
@@ -1373,7 +1376,8 @@ class SFP(NvidiaSFPCommon):
               .add_transition(EVENT_FW_CONTROL, STATE_FW_CONTROL)  # for warm reboot, cable might be in firmware control at startup
             sm.add_state(STATE_RESETTING).set_entry_action(ACTION_ON_RESET) \
               .add_transition(EVENT_RESET_DONE, STATE_POWERED_ON) \
-              .add_transition(EVENT_NOT_PRESENT, STATE_NOT_PRESENT, ACTION_ON_CANCEL_WAIT)
+              .add_transition(EVENT_NOT_PRESENT, STATE_NOT_PRESENT, ACTION_ON_CANCEL_WAIT) \
+              .add_transition(EVENT_WAIT_SFP_READY_FAILED, STATE_NOT_READY)
             sm.add_state(STATE_POWERED_ON).set_entry_action(ACTION_ON_POWERED) \
               .add_transition(EVENT_POWER_BAD, STATE_POWER_BAD) \
               .add_transition(EVENT_SW_CONTROL, STATE_SW_CONTROL) \
@@ -1455,7 +1459,8 @@ class SFP(NvidiaSFPCommon):
     @classmethod
     def action_on_reset(cls, sfp):
         logger.log_info(f'SFP {sfp.sdk_index} is scheduled to wait for resetting done')
-        cls.get_wait_ready_task().schedule_wait(sfp.sdk_index)
+        job = wait_sfp_ready_task.WaitSfpReadyJob(sfp)
+        cls.get_wait_ready_task().schedule_wait(job)
         
     @classmethod
     def action_on_powered(cls, sfp):
@@ -1504,8 +1509,7 @@ class SFP(NvidiaSFPCommon):
             object: an instance of WaitSfpReadyTask
         """
         if not cls.wait_ready_task:
-            from .wait_sfp_ready_task import WaitSfpReadyTask
-            cls.wait_ready_task = WaitSfpReadyTask()
+            cls.wait_ready_task = wait_sfp_ready_task.WaitSfpReadyTask()
         return cls.wait_ready_task
     
     def get_state(self):
@@ -1549,7 +1553,7 @@ class SFP(NvidiaSFPCommon):
         """
         return self.state in (STATE_NOT_PRESENT, STATE_SW_CONTROL, STATE_FW_CONTROL, 
                               STATE_POWER_BAD, STATE_POWER_LIMIT_ERROR, STATE_FCP_NOT_PRESENT,
-                              STATE_FCP_PRESENT)
+                              STATE_FCP_PRESENT, STATE_NOT_READY)
         
     def get_fds_for_poling(self):            
         if self.state == STATE_FW_CONTROL or self.state == STATE_FCP_NOT_PRESENT or self.state == STATE_FCP_PRESENT:
@@ -1575,6 +1579,8 @@ class SFP(NvidiaSFPCommon):
         elif self.state == STATE_POWER_BAD or self.state == STATE_POWER_LIMIT_ERROR:
             sfp_state = SFP.SFP_ERROR_BIT_POWER_BUDGET_EXCEEDED | SFP.SFP_STATUS_BIT_INSERTED
             port_dict[self.sdk_index + 1] = str(sfp_state)
+        elif self.state == STATE_NOT_READY:
+            port_dict[self.sdk_index + 1] = SFP.SFP_ERROR_BIT_BAD_EEPROM | SFP.SFP_STATUS_BIT_INSERTED
             
     def refresh_poll_obj(self, poll_obj, all_registered_fds):
         """Refresh polling object and registered fds. This function is usually called when a cable plugin
@@ -1626,12 +1632,12 @@ class SFP(NvidiaSFPCommon):
         if fd_type == 'hw_present' or fd_type == 'present':
             if fd_value == int(SFP_STATUS_INSERTED):
                 return self.state in (STATE_SW_CONTROL, STATE_FW_CONTROL, STATE_POWER_BAD,
-                                      STATE_POWER_LIMIT_ERROR, STATE_FCP_PRESENT)
+                                      STATE_POWER_LIMIT_ERROR, STATE_FCP_PRESENT, STATE_NOT_READY)
             elif fd_value == int(SFP_STATUS_REMOVED):
                 return self.state in (STATE_NOT_PRESENT, STATE_FCP_NOT_PRESENT)
         elif fd_type == 'power_good':
             if fd_value == 1:
-                return self.state in (STATE_SW_CONTROL, STATE_NOT_PRESENT, STATE_RESETTING)
+                return self.state in (STATE_SW_CONTROL, STATE_NOT_PRESENT, STATE_RESETTING, STATE_NOT_READY)
             else:
                 return self.state in (STATE_POWER_BAD, STATE_POWER_LIMIT_ERROR, STATE_NOT_PRESENT)
         return False
@@ -1659,11 +1665,14 @@ class SFP(NvidiaSFPCommon):
             max_wait_time = 3.5
             begin = time.monotonic()
             while True:
-                ready_sfp_set = wait_ready_task.get_ready_set()
+                ready_sfp_set, failed_sfp_set = wait_ready_task.get_finished_set()
                 for sfp_index in ready_sfp_set:
                     s = sfp_list[sfp_index]
                     logger.log_debug(f'SFP {sfp_index} is recovered from resetting state')
                     s.on_event(EVENT_RESET_DONE)
+                for sfp_index in failed_sfp_set:
+                    s = sfp_list[sfp_index]
+                    s.on_event(EVENT_WAIT_SFP_READY_FAILED)
                 elapse = time.monotonic() - begin
                 if elapse < max_wait_time:
                     time.sleep(0.5)
@@ -1677,6 +1686,31 @@ class SFP(NvidiaSFPCommon):
             logger.log_notice(f'SFP {index} is in state {s.state} after module initialization')
 
         cls.wait_sfp_eeprom_ready(sfp_list, 2)
+    
+    def is_sfp_ready(self):
+        """Check if the SFP isready
+
+        Returns:
+            bool: True if the SFP is ready
+        """
+        api = self.get_xcvr_api()
+        if not api:
+            return False, 'Failed to get xcvr api'
+        
+        if not self.is_cmis_api(api):
+            logger.log_notice(f'SFP {self.sdk_index} is not a CMIS API, it is ready now')
+            return True, None
+        
+        if api.is_flat_memory():
+            logger.log_notice(f'SFP {self.sdk_index} is a flat memory module, it is ready now')
+            return True, None
+        
+        datapath_state = api.get_datapath_state()
+        if datapath_state is None:
+            return False, 'Failed to get datapath state'
+        
+        logger.log_notice(f'SFP {self.sdk_index} datapath state is: {datapath_state}, it is ready now')
+        return True, None
         
 class RJ45Port(NvidiaSFPCommon):
     """class derived from SFP, representing RJ45 ports"""
