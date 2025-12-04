@@ -175,7 +175,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
             self.assertTrue(manager.should_clear_semaphore)
             self.assertEqual(manager.asic_type, "test")
             self.assertIsNone(manager.fw_file)
-            self.assertIsNone(manager.mst_device)
             self.assertIsNone(manager.current_version)
             self.assertIsNone(manager.available_version)
             self.assertIsNotNone(manager.logger)
@@ -211,23 +210,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
 
                 self.assertIn("Firmware file not found", str(context.exception))
 
-    def test_initialize_asic_no_mst_device(self):
-        """Test _initialize_asic when MST device not found (lines 143-144)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="01:00.0",
-                asic_type="test"
-            )
-
-        with patch.object(manager, '_get_firmware_file_path', return_value="/test/fw.mfa"):
-            with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-                with patch.object(manager, 'get_mst_device', return_value=None):
-                    with self.assertRaises(FirmwareManagerError) as context:
-                        manager._initialize_asic()
-
-                    self.assertIn("Could not find MST device", str(context.exception))
-
     def test_initialize_asic_no_firmware_versions(self):
         """Test _initialize_asic when firmware versions not found (lines 148-149)"""
         with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
@@ -239,7 +221,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
 
         with patch.object(manager, '_get_firmware_file_path', return_value="/test/fw.mfa"):
             with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-                with patch.object(manager, 'get_mst_device', return_value="/dev/mst/test"):
                     with patch.object(manager, '_get_firmware_versions', return_value=(None, None)):
                         with self.assertRaises(FirmwareManagerError) as context:
                             manager._initialize_asic()
@@ -257,7 +238,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
 
         with patch.object(manager, '_get_firmware_file_path', return_value="/test/fw.mfa"):
             with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-                with patch.object(manager, 'get_mst_device', return_value="/dev/mst/test"):
                     with patch.object(manager, '_get_firmware_versions', return_value=("1.0.0", "2.0.0")):
                         manager._initialize_asic()
 
@@ -521,8 +501,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
                 asic_type="test"
             )
 
-        manager.mst_device = "/dev/mst/test"
-
         xml_output = '''<?xml version="1.0"?>
         <Devices>
             <Device psid="MT_0000001187">
@@ -548,8 +526,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
                 asic_type="test"
             )
 
-        manager.mst_device = "/dev/mst/test"
-
         mock_run.return_value = MagicMock(returncode=1)
 
         current, available = manager._get_firmware_versions()
@@ -566,8 +542,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
                 pci_id="01:00.0",
                 asic_type="test"
             )
-
-        manager.mst_device = "/dev/mst/test"
 
         mock_run.return_value = MagicMock(returncode=0, stdout="invalid xml")
 
@@ -618,15 +592,13 @@ class TestFirmwareManagerBase(unittest.TestCase):
                 asic_type="test"
             )
 
-        manager.mst_device = "/dev/mst/test"
-
         mock_run.return_value = MagicMock(returncode=0)
 
         result = manager.clear_semaphore()
 
         self.assertTrue(result)
         mock_run.assert_called_once_with(
-            ['/usr/bin/flint', '-d', '/dev/mst/test', '--clear_semaphore'],
+            ['/usr/bin/flint', '-d', '01:00.0', '--clear_semaphore'],
             capture_output=True,
             text=True,
             check=True
@@ -641,8 +613,6 @@ class TestFirmwareManagerBase(unittest.TestCase):
                 pci_id="01:00.0",
                 asic_type="test"
             )
-
-        manager.mst_device = "/dev/mst/test"
 
         from subprocess import CalledProcessError
         mock_run.side_effect = CalledProcessError(1, 'flint', stderr="Command failed")
@@ -661,272 +631,11 @@ class TestFirmwareManagerBase(unittest.TestCase):
                 asic_type="test"
             )
 
-        manager.mst_device = "/dev/mst/test"
-
         mock_run.side_effect = Exception("General error")
 
         result = manager.clear_semaphore()
 
         self.assertFalse(result)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_success_with_pci_id(self, mock_fromstring, mock_run):
-        """Test get_mst_device success with PCI ID matching (lines 216-283)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="0000:06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'TestDevice',
-            'pciName': '/dev/mst/test_device'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-            with patch('builtins.open', mock_open(read_data="domain:bus:dev.fn=0000:06:00.0")):
-                result = manager.get_mst_device()
-
-        self.assertEqual(result, '/dev/mst/test_device')
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_success_no_pci_id(self, mock_fromstring, mock_run):
-        """Test get_mst_device success without PCI ID (lines 247-248)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id=None,
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'TestDevice',
-            'pciName': '/dev/mst/test_device'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-            result = manager.get_mst_device()
-
-        self.assertEqual(result, '/dev/mst/test_device')
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    def test_get_mst_device_command_failure_retry(self, mock_run):
-        """Test get_mst_device with command failure and retry (lines 228-233)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=1)
-
-        with patch('mellanox_fw_manager.firmware_base.time.sleep') as mock_sleep:
-            result = manager.get_mst_device()
-
-        self.assertIsNone(result)
-        self.assertEqual(mock_run.call_count, 10)
-        self.assertEqual(mock_sleep.call_count, 9)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_no_matching_device_type(self, mock_fromstring, mock_run):
-        """Test get_mst_device when no device type matches (lines 238-240)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'WrongDevice',
-            'pciName': '/dev/mst/test_device'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        result = manager.get_mst_device()
-
-        self.assertIsNone(result)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_pci_name_not_exists(self, mock_fromstring, mock_run):
-        """Test get_mst_device when PCI name doesn't exist (lines 243-244)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'TestDevice',
-            'pciName': '/dev/mst/nonexistent'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=False):
-            result = manager.get_mst_device()
-
-        self.assertIsNone(result)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_pci_id_mismatch(self, mock_fromstring, mock_run):
-        """Test get_mst_device when PCI ID doesn't match (lines 264-268)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'TestDevice',
-            'pciName': '/dev/mst/test_device'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-            with patch('builtins.open', mock_open(read_data="domain:bus:dev.fn=0000:07:00.0")):
-                result = manager.get_mst_device()
-
-        self.assertIsNone(result)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_file_read_exception(self, mock_fromstring, mock_run):
-        """Test get_mst_device when file reading raises exception (lines 270-272)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'TestDevice',
-            'pciName': '/dev/mst/test_device'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-            with patch('builtins.open', side_effect=IOError("File read error")):
-                result = manager.get_mst_device()
-
-        self.assertIsNone(result)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    def test_get_mst_device_xml_parsing_exception(self, mock_run):
-        """Test get_mst_device when XML parsing raises exception (lines 276-281)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="invalid xml")
-
-        with patch('mellanox_fw_manager.firmware_base.time.sleep') as mock_sleep:
-            with patch('mellanox_fw_manager.firmware_base.ET.fromstring', side_effect=ET.ParseError("Invalid XML")):
-                result = manager.get_mst_device()
-
-        self.assertIsNone(result)
-        self.assertEqual(mock_run.call_count, 10)
-        self.assertEqual(mock_sleep.call_count, 9)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_no_domain_line(self, mock_fromstring, mock_run):
-        """Test get_mst_device when file has no domain line (lines 256-257)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'TestDevice',
-            'pciName': '/dev/mst/test_device'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-            with patch('builtins.open', mock_open(read_data="some other content\nno domain info here")):
-                result = manager.get_mst_device()
-
-        self.assertIsNone(result)
-
-    @patch('mellanox_fw_manager.firmware_base.subprocess.run')
-    @patch('mellanox_fw_manager.firmware_base.ET.fromstring')
-    def test_get_mst_device_no_domain_part(self, mock_fromstring, mock_run):
-        """Test get_mst_device when line has no domain part (lines 261-262)"""
-        with patch.object(ConcreteFirmwareManager, '_initialize_asic'):
-            manager = ConcreteFirmwareManager(
-                asic_index=0,
-                pci_id="06:00.0",
-                asic_type="test"
-            )
-
-        mock_run.return_value = MagicMock(returncode=0, stdout="<xml>test</xml>")
-
-        mock_root = MagicMock()
-        mock_device = MagicMock()
-        mock_device.get.side_effect = lambda attr, default='': {
-            'type': 'TestDevice',
-            'pciName': '/dev/mst/test_device'
-        }.get(attr, default)
-        mock_root.findall.return_value = [mock_device]
-        mock_fromstring.return_value = mock_root
-
-        with patch('mellanox_fw_manager.firmware_base.os.path.exists', return_value=True):
-            with patch('builtins.open', mock_open(read_data="domain:bus:dev.fn but no equals sign")):
-                result = manager.get_mst_device()
-
-        self.assertIsNone(result)
 
 if __name__ == '__main__':
     unittest.main()

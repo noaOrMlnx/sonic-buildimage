@@ -55,7 +55,7 @@ class SpectrumFirmwareManager(FirmwareManagerBase):
     def _get_available_firmware_version(self, psid: str) -> Optional[str]:
         """Get available firmware version for Spectrum ASICs using mlxfwmanager."""
         try:
-            cmd = ['mlxfwmanager', '--list-content', '-i', self.fw_file, '-d', self.mst_device]
+            cmd = ['mlxfwmanager', '--list-content', '-i', self.fw_file, '-d', self.pci_id]
             result = self._run_command(cmd, capture_output=True, text=True)
             if result.returncode != 0:
                 self.logger.error(f"Failed to get available firmware version for Spectrum ASICs using mlxfwmanager: {result.returncode}")
@@ -77,14 +77,14 @@ class SpectrumFirmwareManager(FirmwareManagerBase):
     def run_firmware_update(self) -> bool:
         """Run the actual firmware update command for Spectrum ASICs."""
         try:
-            cmd = ['mlxfwmanager', '-u', '-f', '-y', '-d', self.mst_device, '-i', self.fw_file]
+            cmd = ['mlxfwmanager', '-u', '-f', '-y', '-d', self.pci_id, '-i', self.fw_file]
             env = self._get_env()
 
             result = self._run_command(cmd, env=env, capture_output=True, text=True)
 
             if result.returncode == FW_ALREADY_UPDATED_FAILURE:
                 self.logger.info("FW reactivation is required. Reactivating and updating FW ...")
-                reactivate_cmd = ['flint', '-d', self.mst_device, 'ir']
+                reactivate_cmd = ['flint', '-d', self.pci_id, 'ir']
                 reactivate_result = self._run_command(reactivate_cmd, capture_output=True, text=True)
                 if reactivate_result.returncode != 0:
                     self.logger.warning(f"FW reactivation failed with return code {reactivate_result.returncode}: {reactivate_result.stderr}")

@@ -98,7 +98,6 @@ class TestFirmwareUpgrade(unittest.TestCase):
         defaults.update(kwargs)
 
         manager = SpectrumFirmwareManager(**defaults)
-        manager.mst_device = "/dev/mst/mt53104_pci_cr0"
         manager.fw_file = "/test/fw/fw-SPC3.mfa"
         return manager
 
@@ -115,7 +114,6 @@ class TestFirmwareUpgrade(unittest.TestCase):
         defaults.update(kwargs)
 
         manager = BluefieldFirmwareManager(**defaults)
-        manager.mst_device = "/dev/mst/mt41692_pciconf0"
         manager.fw_file = "/test/fw/fw-BF3.mfa"
         return manager
 
@@ -152,7 +150,7 @@ class TestFirmwareUpgrade(unittest.TestCase):
             self.assertIn('-f', upgrade_call[0][0])
             self.assertIn('-y', upgrade_call[0][0])
             self.assertIn('-d', upgrade_call[0][0])
-            self.assertIn('/dev/mst/mt53104_pci_cr0', upgrade_call[0][0])
+            self.assertIn('01:00.0', upgrade_call[0][0])
             self.assertIn('-i', upgrade_call[0][0])
             self.assertIn('/test/fw/fw-SPC3.mfa', upgrade_call[0][0])
 
@@ -246,7 +244,7 @@ class TestFirmwareUpgrade(unittest.TestCase):
             reactivate_call = mock_run.call_args_list[1]
             self.assertIn('flint', reactivate_call[0][0])
             self.assertIn('-d', reactivate_call[0][0])
-            self.assertIn('/dev/mst/mt53104_pci_cr0', reactivate_call[0][0])
+            self.assertIn('01:00.0', reactivate_call[0][0])
             self.assertIn('ir', reactivate_call[0][0])
 
             retry_call = mock_run.call_args_list[2]

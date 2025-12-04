@@ -58,7 +58,6 @@ class TestSpectrumFirmwareManager(unittest.TestCase):
 
         with patch.object(SpectrumFirmwareManager, '_initialize_asic'):
             manager = SpectrumFirmwareManager(**defaults)
-            manager.mst_device = "/dev/mst/mt53104_pci_cr0"
             manager.fw_file = f"{self.temp_dir}/fw-SPC3.mfa"
             manager.current_version = "30.2016.1036"
             manager.available_version = "30.2016.1040"

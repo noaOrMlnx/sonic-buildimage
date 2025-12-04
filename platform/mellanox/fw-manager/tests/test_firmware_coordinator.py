@@ -55,6 +55,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 2
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0", "02:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
         mock_create_manager.return_value = MagicMock()
 
         coordinator = FirmwareCoordinator(verbose=True, from_image=False, clear_semaphore=True)
@@ -72,6 +73,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
         mock_create_manager.return_value = MagicMock()
 
         with patch.object(FirmwareCoordinator, '_get_image_firmware_path', return_value="/test/fw"):
@@ -90,6 +92,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 3
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
         mock_create_manager.return_value = MagicMock()
 
         coordinator = FirmwareCoordinator()
@@ -105,6 +108,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 2
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0", "02:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
         mock_create_manager.return_value = MagicMock()
 
         coordinator = FirmwareCoordinator()
@@ -120,6 +124,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
         mock_create_manager.return_value = MagicMock()
 
         coordinator = FirmwareCoordinator()
@@ -135,6 +140,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "bluefield3"
 
         from mellanox_fw_manager.fw_manager import BluefieldFirmwareManager
         mock_manager = MagicMock(spec=BluefieldFirmwareManager)
@@ -158,12 +164,12 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager = MagicMock()
         mock_manager.asic_index = 0
         mock_manager.is_upgrade_required.return_value = True
         mock_create_manager.return_value = mock_manager
-
 
         coordinator = FirmwareCoordinator()
         result = coordinator.check_upgrade_required()
@@ -178,12 +184,12 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager = MagicMock()
         mock_manager.asic_index = 0
         mock_manager.is_upgrade_required.return_value = True
         mock_create_manager.return_value = mock_manager
-
 
         coordinator = FirmwareCoordinator()
         result = coordinator.check_upgrade_required()
@@ -198,6 +204,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_create_manager.side_effect = FirmwareManagerError("Failed to create manager")
 
@@ -212,12 +219,12 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager = MagicMock()
         mock_manager.asic_index = 0
-        mock_manager.is_alive.return_value = False  # Process completed
+        mock_manager.is_alive.return_value = False
         mock_create_manager.return_value = mock_manager
-
 
         coordinator = FirmwareCoordinator()
 
@@ -239,12 +246,12 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager = MagicMock()
         mock_manager.asic_index = 0
-        mock_manager.is_alive.return_value = False  # Process completed
+        mock_manager.is_alive.return_value = False
         mock_create_manager.return_value = mock_manager
-
 
         coordinator = FirmwareCoordinator()
 
@@ -276,15 +283,15 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 2
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0", "02:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager1 = MagicMock()
         mock_manager1.asic_index = 0
-        mock_manager1.is_alive.return_value = False  # Process completed
+        mock_manager1.is_alive.return_value = False
         mock_manager2 = MagicMock()
         mock_manager2.asic_index = 1
-        mock_manager2.is_alive.return_value = False  # Process completed
+        mock_manager2.is_alive.return_value = False
         mock_create_manager.side_effect = [mock_manager1, mock_manager2]
-
 
         coordinator = FirmwareCoordinator()
 
@@ -326,12 +333,12 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager = MagicMock()
         mock_manager.asic_index = 0
         mock_manager.is_upgrade_required.side_effect = Exception("Check failed")
         mock_create_manager.return_value = mock_manager
-
 
         coordinator = FirmwareCoordinator()
         result = coordinator.check_upgrade_required()
@@ -341,12 +348,13 @@ class TestFirmwareCoordinator(unittest.TestCase):
     @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
     @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
     @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
-    @patch('mellanox_fw_manager.firmware_coordinator.subprocess.run')
+    @patch('mellanox_fw_manager.firmware_coordinator.run_command')
     def test_get_image_firmware_path_sonic_installer_failure(self, mock_run, mock_create_manager, mock_asic_manager, mock_detect_platform):
         """Test _get_image_firmware_path when sonic-installer fails (lines 214-215)"""
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 0
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="Command failed")
 
@@ -358,12 +366,13 @@ class TestFirmwareCoordinator(unittest.TestCase):
     @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
     @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
     @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
-    @patch('mellanox_fw_manager.firmware_coordinator.subprocess.run')
+    @patch('mellanox_fw_manager.firmware_coordinator.run_command')
     def test_get_image_firmware_path_no_next_image(self, mock_run, mock_create_manager, mock_asic_manager, mock_detect_platform):
         """Test _get_image_firmware_path when no next image found (lines 225-226)"""
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 0
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -378,13 +387,14 @@ class TestFirmwareCoordinator(unittest.TestCase):
     @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
     @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
     @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
-    @patch('mellanox_fw_manager.firmware_coordinator.subprocess.run')
+    @patch('mellanox_fw_manager.firmware_coordinator.run_command')
     @patch('mellanox_fw_manager.firmware_coordinator.os.path.exists')
     def test_get_image_firmware_path_current_equals_next(self, mock_exists, mock_run, mock_create_manager, mock_asic_manager, mock_detect_platform):
         """Test _get_image_firmware_path when current equals next image - should proceed normally"""
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 0
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -401,13 +411,14 @@ class TestFirmwareCoordinator(unittest.TestCase):
     @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
     @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
     @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
-    @patch('mellanox_fw_manager.firmware_coordinator.subprocess.run')
+    @patch('mellanox_fw_manager.firmware_coordinator.run_command')
     @patch('mellanox_fw_manager.firmware_coordinator.os.path.exists')
     def test_get_image_firmware_path_platform_specific(self, mock_exists, mock_run, mock_create_manager, mock_asic_manager, mock_detect_platform):
         """Test _get_image_firmware_path with platform-specific path (lines 234-236)"""
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 0
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -424,7 +435,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
     @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
     @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
     @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
-    @patch('mellanox_fw_manager.firmware_coordinator.subprocess.run')
+    @patch('mellanox_fw_manager.firmware_coordinator.run_command')
     @patch('mellanox_fw_manager.firmware_coordinator.os.path.exists')
     @patch('mellanox_fw_manager.firmware_coordinator.os.makedirs')
     def test_get_image_firmware_path_squashfs_mount_success(self, mock_makedirs, mock_exists, mock_run, mock_create_manager, mock_asic_manager, mock_detect_platform):
@@ -432,6 +443,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 0
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_run.side_effect = [
             MagicMock(returncode=0, stdout="Current: SONiC-OS-202301.01\nNext: SONiC-OS-202302.01"),
@@ -452,7 +464,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
     @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
     @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
     @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
-    @patch('mellanox_fw_manager.firmware_coordinator.subprocess.run')
+    @patch('mellanox_fw_manager.firmware_coordinator.run_command')
     @patch('mellanox_fw_manager.firmware_coordinator.os.path.exists')
     @patch('mellanox_fw_manager.firmware_coordinator.os.makedirs')
     def test_get_image_firmware_path_mount_failure(self, mock_makedirs, mock_exists, mock_run, mock_create_manager, mock_asic_manager, mock_detect_platform):
@@ -460,6 +472,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 0
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = []
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_run.side_effect = [
             MagicMock(returncode=0, stdout="Current: SONiC-OS-202301.01\nNext: SONiC-OS-202302.01"),
@@ -481,6 +494,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["08:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "bluefield3"
 
         from mellanox_fw_manager.bluefield_manager import BluefieldFirmwareManager
         mock_manager = MagicMock(spec=BluefieldFirmwareManager)
@@ -501,6 +515,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["08:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "bluefield3"
 
         from mellanox_fw_manager.bluefield_manager import BluefieldFirmwareManager
         mock_manager = MagicMock(spec=BluefieldFirmwareManager)
@@ -521,6 +536,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 2
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["08:00.0", "09:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "bluefield3"
 
         from mellanox_fw_manager.bluefield_manager import BluefieldFirmwareManager
         mock_manager1 = MagicMock(spec=BluefieldFirmwareManager)
@@ -546,6 +562,7 @@ class TestFirmwareCoordinator(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 2
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["08:00.0", "09:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "bluefield3"
 
         from mellanox_fw_manager.bluefield_manager import BluefieldFirmwareManager
         mock_manager1 = MagicMock(spec=BluefieldFirmwareManager)
@@ -558,6 +575,123 @@ class TestFirmwareCoordinator(unittest.TestCase):
 
         coordinator = FirmwareCoordinator()
         coordinator.reset_firmware_config()
+
+    @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
+    @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
+    @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
+    def test_upgrade_firmware_4_asics_all_success(self, mock_create_manager, mock_asic_manager, mock_detect_platform):
+        """Test upgrade_firmware with 4 ASICs all succeeding"""
+        mock_detect_platform.return_value = "test-platform"
+        mock_asic_manager.return_value.get_asic_count.return_value = 4
+        mock_asic_manager.return_value.get_asic_pci_ids.return_value = [
+            "0000:01:10.0", "0000:02:11.0", "0000:03:12.0", "0000:04:13.0"
+        ]
+        mock_asic_manager.return_value.get_asic_type.return_value = "SPC5"
+
+        mock_managers = []
+        for i in range(4):
+            mock_manager = MagicMock()
+            mock_manager.asic_index = i
+            mock_manager.is_alive.return_value = False
+            mock_managers.append(mock_manager)
+
+        mock_create_manager.side_effect = mock_managers
+
+        coordinator = FirmwareCoordinator()
+
+        with patch('mellanox_fw_manager.firmware_coordinator.Queue') as mock_queue_class:
+            mock_queue_instance = MagicMock()
+            mock_queue_class.return_value = mock_queue_instance
+
+            status_data = [
+                {
+                    'asic_index': i,
+                    'status': UpgradeStatusType.SUCCESS.value,
+                    'message': f'ASIC {i} upgrade completed',
+                    'current_version': '1.0',
+                    'available_version': '1.1',
+                    'pci_id': f'0000:0{i+1}:1{i}.0'
+                }
+                for i in range(4)
+            ]
+            mock_queue_instance.empty.side_effect = [False, False, False, False, True]
+            mock_queue_instance.get_nowait.side_effect = status_data
+
+            coordinator.upgrade_firmware()
+
+            # Verify all 4 managers were started
+            for i, manager in enumerate(mock_managers):
+                manager.start.assert_called_once()
+                self.assertEqual(manager.status_queue, mock_queue_instance)
+
+    @patch('mellanox_fw_manager.firmware_coordinator._detect_platform')
+    @patch('mellanox_fw_manager.firmware_coordinator.AsicManager')
+    @patch('mellanox_fw_manager.fw_manager.create_firmware_manager')
+    def test_upgrade_firmware_4_asics_verify_parallel_start(self, mock_create_manager, mock_asic_manager, mock_detect_platform):
+        """Test that all 4 ASIC managers are started in parallel (before any join)"""
+        mock_detect_platform.return_value = "test-platform"
+        mock_asic_manager.return_value.get_asic_count.return_value = 4
+        mock_asic_manager.return_value.get_asic_pci_ids.return_value = [
+            "0000:01:10.0", "0000:02:11.0", "0000:03:12.0", "0000:04:13.0"
+        ]
+        mock_asic_manager.return_value.get_asic_type.return_value = "SPC5"
+
+        start_order = []
+        join_order = []
+
+        mock_managers = []
+        for i in range(4):
+            mock_manager = MagicMock()
+            mock_manager.asic_index = i
+            mock_manager.is_alive.return_value = False
+
+            # Track when start() and join() are called
+            def make_start_tracker(idx):
+                def track_start():
+                    start_order.append(idx)
+                return track_start
+
+            def make_join_tracker(idx):
+                def track_join(timeout=None):
+                    join_order.append(idx)
+                return track_join
+
+            mock_manager.start.side_effect = make_start_tracker(i)
+            mock_manager.join.side_effect = make_join_tracker(i)
+            mock_managers.append(mock_manager)
+
+        mock_create_manager.side_effect = mock_managers
+
+        coordinator = FirmwareCoordinator()
+
+        with patch('mellanox_fw_manager.firmware_coordinator.Queue') as mock_queue_class:
+            mock_queue_instance = MagicMock()
+            mock_queue_class.return_value = mock_queue_instance
+
+            status_data = [
+                {
+                    'asic_index': i,
+                    'status': UpgradeStatusType.SUCCESS.value,
+                    'message': f'ASIC {i} upgrade completed',
+                    'current_version': '1.0',
+                    'available_version': '1.1',
+                    'pci_id': f'0000:0{i+1}:1{i}.0'
+                }
+                for i in range(4)
+            ]
+            mock_queue_instance.empty.side_effect = [False, False, False, False, True]
+            mock_queue_instance.get_nowait.side_effect = status_data
+
+            coordinator.upgrade_firmware()
+
+            # Verify all managers were started BEFORE any joins
+            self.assertEqual(start_order, [0, 1, 2, 3], "All processes should start before joining")
+            self.assertEqual(join_order, [0, 1, 2, 3], "Processes should join in order")
+
+            # Verify start() called on all before first join
+            for manager in mock_managers:
+                manager.start.assert_called_once()
+                manager.join.assert_called_once()
 
 if __name__ == '__main__':
     unittest.main()

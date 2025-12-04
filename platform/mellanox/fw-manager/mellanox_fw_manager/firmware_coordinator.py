@@ -64,7 +64,8 @@ class FirmwareCoordinator:
         from .fw_manager import create_firmware_manager
         num_asics = self.get_asic_count()
         pci_ids = self.get_asic_pci_ids()
-        self.managers = []
+        asic_type = self.asic_manager.get_asic_type()
+        self.managers = []  
 
         if self.from_image:
             try:
@@ -82,6 +83,7 @@ class FirmwareCoordinator:
                 manager = create_firmware_manager(
                     asic_index=asic_index,
                     pci_id=pci_id,
+                    asic_type=asic_type,
                     fw_bin_path=self.fw_bin_path,
                     verbose=self.verbose,
                     clear_semaphore=self.clear_semaphore

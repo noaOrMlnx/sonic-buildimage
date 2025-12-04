@@ -24,7 +24,8 @@ Handles ASIC detection and configuration parsing for both single and multi-ASIC 
 
 import os
 import logging
-from typing import List, Optional
+import subprocess
+from typing import List, Optional, Tuple
 
 class AsicManager:
     """Manages ASIC detection and configuration."""
@@ -42,6 +43,15 @@ class AsicManager:
         self.asic_conf_file = f"/usr/share/sonic/device/{platform}/asic.conf"
 
         self._load_asic_data()
+
+        self._asic_type, detected_pci_devices = self._detect_asic_type()
+
+        if self.is_multi_asic():
+            for pci_device in self._pci_ids:
+                if pci_device not in detected_pci_devices:
+                    self.logger.warning(f"PCI device {pci_device} not found in detected PCI devices")
+        else:
+            self._pci_ids = [detected_pci_devices[0]]
 
     def _load_asic_data(self):
         """Load and cache ASIC configuration data from file."""
@@ -85,6 +95,60 @@ class AsicManager:
             self._asic_count = 1
             self._pci_ids = []
 
+    def _detect_asic_type(self) -> Tuple[str, List[str]]:
+        """Detect ASIC type and get list of PCI device addresses using lspci.
+        
+        Returns:
+            Tuple[str, List[str]]: A tuple of (asic_type, pci_device_list) where
+                asic_type is the detected ASIC type string and pci_device_list contains
+                PCI device addresses (e.g., '0000:03:00.0').
+                
+        Raises:
+            RuntimeError: If no Mellanox ASIC is detected in the system.
+        """
+        from .spectrum_manager import SpectrumFirmwareManager
+        from .bluefield_manager import BluefieldFirmwareManager
+
+        try:
+            # Get lspci output with domain, numeric IDs
+            result = subprocess.run(['lspci', '-Dn'], capture_output=True, text=True, check=True)
+            lspci_output = result.stdout
+
+            detected_asic_type = None
+            pci_device_list = []
+            asic_type_maps = [
+                SpectrumFirmwareManager.get_asic_type_map(),
+                # BlueField ASICs should be checked last (Smart Switch requirement)
+                BluefieldFirmwareManager.get_asic_type_map()
+            ]
+
+            # Parse lspci output to find matching devices
+            for asic_map in asic_type_maps:
+                for vendor_product, asic_type in asic_map.items():
+                    # vendor_product format: "15b3:cf70"
+                    for line in lspci_output.splitlines():
+                        if vendor_product in line:
+                            # Extract PCI address (first field before space)
+                            pci_addr = line.split()[0]
+                            if detected_asic_type is None:
+                                detected_asic_type = asic_type
+                            if pci_addr not in pci_device_list:
+                                pci_device_list.append(pci_addr)
+                                self.logger.info(f"Found {asic_type} device at {pci_addr}")
+
+                if detected_asic_type:
+                    break
+
+            if detected_asic_type is None or not pci_device_list:
+                raise RuntimeError("No Mellanox ASIC detected in the system")
+
+            self.logger.info(f"Detected ASIC type: {detected_asic_type}, PCI devices: {pci_device_list}")
+            return (detected_asic_type, pci_device_list)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Failed to run lspci: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"ASIC type detection failed: {e}") from e
+
     def get_asic_count(self) -> int:
         """
         Get the number of ASICs in the system.
@@ -125,3 +189,12 @@ class AsicManager:
             True if multi-ASIC, False if single ASIC
         """
         return self._asic_count > 1
+    
+    def get_asic_type(self) -> str:
+        """
+        Get the ASIC type.
+
+        Returns:
+            ASIC type
+        """
+        return self._asic_type

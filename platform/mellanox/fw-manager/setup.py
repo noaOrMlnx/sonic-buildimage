@@ -53,11 +53,6 @@ setup(
         ],
     },
     test_suite="tests",
-    tests_require=[
-        "pytest>=6.0",
-        "pytest-cov>=2.10.0",
-        "pytest-mock>=3.3.0",
-    ],
     entry_points={
         "console_scripts": [
             "mlnx-fw-manager=mellanox_fw_manager.main:main",

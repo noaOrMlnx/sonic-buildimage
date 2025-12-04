@@ -53,6 +53,7 @@ class TestIntegration(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 2
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0", "02:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager1 = MagicMock()
         mock_manager1.asic_index = 0
@@ -80,6 +81,7 @@ class TestIntegration(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager = MagicMock()
         mock_manager.asic_index = 0
@@ -94,14 +96,12 @@ class TestIntegration(unittest.TestCase):
         pci_ids = coordinator.get_asic_pci_ids()
         self.assertEqual(pci_ids, ["01:00.0"])
 
-    @patch('mellanox_fw_manager.fw_manager._detect_asic_type')
     @patch('mellanox_fw_manager.spectrum_manager.SpectrumFirmwareManager._initialize_asic')
-    def test_firmware_manager_creation_integration(self, mock_init_asic, mock_detect_asic_type):
+    def test_firmware_manager_creation_integration(self, mock_init_asic):
         """Test firmware manager creation integration for Spectrum"""
-        mock_detect_asic_type.return_value = "SPC3"
         mock_init_asic.return_value = None
 
-        manager = create_firmware_manager(0, "01:00.0", fw_bin_path="/test/fw")
+        manager = create_firmware_manager(0, "01:00.0", asic_type="SPC3", fw_bin_path="/test/fw")
 
         from mellanox_fw_manager.spectrum_manager import SpectrumFirmwareManager
         self.assertIsInstance(manager, SpectrumFirmwareManager)
@@ -110,14 +110,12 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(manager.fw_bin_path, "/test/fw")
         self.assertEqual(manager.asic_type, "SPC3")
 
-    @patch('mellanox_fw_manager.fw_manager._detect_asic_type')
     @patch('mellanox_fw_manager.bluefield_manager.BluefieldFirmwareManager._initialize_asic')
-    def test_firmware_manager_creation_bluefield(self, mock_init_asic, mock_detect_asic_type):
+    def test_firmware_manager_creation_bluefield(self, mock_init_asic):
         """Test firmware manager creation for BlueField"""
-        mock_detect_asic_type.return_value = "BF3"
         mock_init_asic.return_value = None
 
-        manager = create_firmware_manager(0, "08:00.0", fw_bin_path="/test/fw")
+        manager = create_firmware_manager(0, "08:00.0", asic_type="BF3", fw_bin_path="/test/fw")
 
         from mellanox_fw_manager.bluefield_manager import BluefieldFirmwareManager
         self.assertIsInstance(manager, BluefieldFirmwareManager)
@@ -134,6 +132,7 @@ class TestIntegration(unittest.TestCase):
         mock_detect_platform.return_value = "test-platform"
         mock_asic_manager.return_value.get_asic_count.return_value = 1
         mock_asic_manager.return_value.get_asic_pci_ids.return_value = ["01:00.0"]
+        mock_asic_manager.return_value.get_asic_type.return_value = "spectrum"
 
         mock_manager = MagicMock()
         mock_manager.asic_index = 0

@@ -29,7 +29,7 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from mellanox_fw_manager.platform_utils import (
-    _detect_platform, _detect_asic_type,
+    _detect_platform,
     _detect_platform_from_asic_conf, _is_multi_asic,
     run_command
 )
@@ -102,132 +102,6 @@ other_variable=value
 
             self.assertIsNone(result)
             mock_logging.error.assert_called_with("Platform detection failed: Permission denied")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_success_spc3(self, mock_logging, mock_run):
-        """Test _detect_asic_type when SPC3 ASIC is detected"""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "15b3:cf70 01:00.0 Ethernet controller: Mellanox Technologies MT52100"
-
-        result = _detect_asic_type()
-
-        self.assertEqual(result, "SPC3")
-        mock_logging.info.assert_called_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_success_bf3(self, mock_logging, mock_run):
-        """Test _detect_asic_type when BlueField3 ASIC is detected"""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "15b3:a2dc 01:00.0 Ethernet controller: Mellanox Technologies BlueField-3"
-
-        result = _detect_asic_type()
-
-        self.assertEqual(result, "BF3")
-        mock_logging.info.assert_called_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_success_spc(self, mock_logging, mock_run):
-        """Test _detect_asic_type when SPC ASIC is detected"""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "15b3:cb84 01:00.0 Ethernet controller: Mellanox Technologies MT52100"
-
-        result = _detect_asic_type()
-
-        self.assertEqual(result, "SPC")
-        mock_logging.info.assert_called_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_success_spc2(self, mock_logging, mock_run):
-        """Test _detect_asic_type when SPC2 ASIC is detected"""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "15b3:cf6c 01:00.0 Ethernet controller: Mellanox Technologies MT52100"
-
-        result = _detect_asic_type()
-
-        self.assertEqual(result, "SPC2")
-        mock_logging.info.assert_called_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_success_spc4(self, mock_logging, mock_run):
-        """Test _detect_asic_type when SPC4 ASIC is detected"""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "15b3:cf80 01:00.0 Ethernet controller: Mellanox Technologies MT52100"
-
-        result = _detect_asic_type()
-
-        self.assertEqual(result, "SPC4")
-        mock_logging.info.assert_called_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_success_spc5(self, mock_logging, mock_run):
-        """Test _detect_asic_type when SPC5 ASIC is detected"""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "15b3:cf82 01:00.0 Ethernet controller: Mellanox Technologies MT52100"
-
-        result = _detect_asic_type()
-
-        self.assertEqual(result, "SPC5")
-        mock_logging.info.assert_called_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_unknown_device(self, mock_logging, mock_run):
-        """Test _detect_asic_type when unknown device is detected"""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "8086:1234 01:00.0 Ethernet controller: Intel Corporation"
-
-        result = _detect_asic_type()
-
-        self.assertIsNone(result)
-        mock_logging.info.assert_called_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    @patch('mellanox_fw_manager.platform_utils.time.sleep')
-    def test_detect_asic_type_retry_success(self, mock_sleep, mock_logging, mock_run):
-        """Test _detect_asic_type with retry logic - fails first, succeeds on retry"""
-        mock_run.side_effect = [
-            MagicMock(returncode=1, stdout=""),
-            MagicMock(returncode=0, stdout="15b3:cf70 01:00.0 Ethernet controller: Mellanox Technologies MT52100")
-        ]
-
-        result = _detect_asic_type()
-
-        self.assertEqual(result, "SPC3")
-        self.assertEqual(mock_run.call_count, 2)
-        mock_sleep.assert_called_once_with(1)
-        mock_logging.info.assert_called_once_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    @patch('mellanox_fw_manager.platform_utils.time.sleep')
-    def test_detect_asic_type_retry_failure(self, mock_sleep, mock_logging, mock_run):
-        """Test _detect_asic_type with retry logic - all retries fail"""
-        mock_run.return_value.returncode = 1
-        mock_run.return_value.stdout = ""
-
-        result = _detect_asic_type()
-
-        self.assertIsNone(result)
-        self.assertEqual(mock_run.call_count, 10)
-        self.assertEqual(mock_sleep.call_count, 10)
-        mock_logging.info.assert_called_once_with("Executing: lspci -n")
-
-    @patch('mellanox_fw_manager.platform_utils.subprocess.run')
-    @patch('mellanox_fw_manager.platform_utils.logging')
-    def test_detect_asic_type_exception(self, mock_logging, mock_run):
-        """Test _detect_asic_type when subprocess raises exception"""
-        mock_run.side_effect = Exception("Command not found")
-
-        result = _detect_asic_type()
-
-        self.assertIsNone(result)
 
 class TestRunCommand(unittest.TestCase):
     """Test cases for run_command utility function"""

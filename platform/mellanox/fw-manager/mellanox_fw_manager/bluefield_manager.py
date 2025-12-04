@@ -72,12 +72,12 @@ class BluefieldFirmwareManager(FirmwareManagerBase):
         try:
             env = self._get_env()
 
-            reactivate_cmd = ['flint', '-d', self.mst_device, 'ir']
+            reactivate_cmd = ['flint', '-d', self.pci_id, 'ir']
             result = self._run_command(reactivate_cmd, capture_output=True, text=True)
             if result.returncode != 0:
                 self.logger.warning(f"FW reactivation failed with return code {result.returncode}: {result.stderr}")
 
-            burn_cmd = ['flint', '-d', self.mst_device, '-i', self.fw_file, 'burn']
+            burn_cmd = ['flint', '-d', self.pci_id, '-i', self.fw_file, 'burn']
             result = self._run_command(burn_cmd, env=env, capture_output=True, text=True)
             if result.returncode != 0:
                 self.logger.error(f"Failed to burn firmware for BlueField ASICs using flint with return code {result.returncode}: {result.stderr}")
@@ -91,7 +91,7 @@ class BluefieldFirmwareManager(FirmwareManagerBase):
     def reset_firmware_config(self) -> bool:
         """Reset firmware configuration (BlueField specific)."""
         try:
-            cmd = ['mlxconfig', '-d', self.mst_device, '-y', 'r']
+            cmd = ['mlxconfig', '-d', self.pci_id, '-y', 'r']
             result = self._run_command(cmd, capture_output=True, text=True)
             if result.returncode != 0:
                 self.logger.error(f"Failed to reset firmware config with return code {result.returncode}: {result.stderr}")

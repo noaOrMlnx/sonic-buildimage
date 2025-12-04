@@ -100,7 +100,7 @@ class UpgradeStatus:
 class FirmwareManagerBase(Process):
     """Base firmware manager class for a single ASIC, running in its own process."""
 
-    def __init__(self, asic_index: int, pci_id: Optional[str],
+    def __init__(self, asic_index: int, pci_id: str,
                  fw_bin_path: str = None, verbose: bool = False, clear_semaphore: bool = False,
                  asic_type: str = None, status_queue: Queue = None):
         """
@@ -125,7 +125,6 @@ class FirmwareManagerBase(Process):
 
         self.asic_type = asic_type
         self.fw_file = None
-        self.mst_device = None
         self.current_version = None
         self.available_version = None
 
@@ -146,10 +145,6 @@ class FirmwareManagerBase(Process):
             self.fw_file = self._get_firmware_file_path(self.asic_type, self.fw_bin_path)
             if not self.fw_file or not os.path.exists(self.fw_file):
                 raise FirmwareManagerError(f"Firmware file not found: {self.fw_file}")
-
-            self.mst_device = self.get_mst_device()
-            if not self.mst_device:
-                raise FirmwareManagerError(f"Could not find MST device for ASIC {self.asic_index}")
 
             self.current_version, self.available_version = self._get_firmware_versions()
             if not self.current_version or not self.available_version:
@@ -230,68 +225,6 @@ class FirmwareManagerBase(Process):
             return None
         return f'fw-{self.asic_type}.mfa'
 
-    def get_mst_device(self) -> Optional[str]:
-        """Get the MST device for this ASIC with retry logic (matches shell script)."""
-        query_retry_count = 0
-        query_retry_count_max = 10
-
-        while query_retry_count < query_retry_count_max:
-            try:
-                device_type = self._get_mst_device_type()
-
-                cmd = ['mlxfwmanager', '--query-format', 'XML']
-                if query_retry_count == 0:
-                    self.logger.info(f"Executing: {' '.join(cmd)}")
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                if result.returncode != 0:
-                    if query_retry_count >= query_retry_count_max - 1:
-                        return None
-                    time.sleep(1)
-                    query_retry_count += 1
-                    continue
-                root = ET.fromstring(result.stdout)
-
-                for device in root.findall('.//Device'):
-                    device_type_attr = device.get('type', '')
-                    if device_type not in device_type_attr:
-                        continue
-
-                    pci_name = device.get('pciName')
-                    if not pci_name or not os.path.exists(pci_name):
-                        continue
-
-                    if not self.pci_id:
-                        return pci_name
-
-                    try:
-                        with open(pci_name, 'r') as f:
-                            for line in f:
-                                if 'domain:bus:dev.fn' not in line:
-                                    continue
-
-                                for part in line.split():
-                                    if 'domain:bus:dev.fn=' not in part:
-                                        continue
-
-                                    actual_pci_id = part.split('=')[1]
-                                    if actual_pci_id == self.pci_id:
-                                        return pci_name
-                                    break
-                                break
-                    except Exception:
-                        continue
-
-                return None
-
-            except Exception:
-                if query_retry_count >= query_retry_count_max - 1:
-                    return None
-                time.sleep(1)
-                query_retry_count += 1
-                continue
-
-        return None
-
     @abstractmethod
     def _get_mst_device_type(self) -> str:
         """Get MST device type based on ASIC type (matches shell script)."""
@@ -316,7 +249,7 @@ class FirmwareManagerBase(Process):
     def _get_firmware_versions(self) -> Tuple[Optional[str], Optional[str]]:
         """Get current and available firmware versions."""
         try:
-            cmd = ['mlxfwmanager', '--query-format', 'XML', '-d', self.mst_device]
+            cmd = ['mlxfwmanager', '--query-format', 'XML', '-d', self.pci_id]
             result = self._run_command(cmd, capture_output=True, text=True)
             if result.returncode != 0:
                 return None, None
@@ -372,13 +305,13 @@ class FirmwareManagerBase(Process):
             True if successful, False otherwise
         """
         try:
-            self.logger.info(f"Clearing semaphore for device {self.mst_device}")
-            cmd = ['/usr/bin/flint', '-d', self.mst_device, '--clear_semaphore']
+            self.logger.info(f"Clearing semaphore for device {self.pci_id}")
+            cmd = ['/usr/bin/flint', '-d', self.pci_id, '--clear_semaphore']
             result = self._run_command(cmd, capture_output=True, text=True, check=True)
-            self.logger.info(f"Successfully cleared semaphore for {self.mst_device}")
+            self.logger.info(f"Successfully cleared semaphore for {self.pci_id}")
             return True
         except subprocess.CalledProcessError as e:
-            self.logger.error(f"Failed to clear semaphore for {self.mst_device}: {e.stderr}")
+            self.logger.error(f"Failed to clear semaphore for {self.pci_id}: {e.stderr}")
             return False
         except Exception as e:
             self.logger.error(f"Failed to clear semaphore for ASIC {self.asic_index}: {e}")

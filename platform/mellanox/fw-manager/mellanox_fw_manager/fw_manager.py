@@ -24,7 +24,6 @@ Main entry point and factory functions for Mellanox ASIC firmware management.
 
 from typing import Optional
 from .firmware_base import FirmwareManagerBase, FirmwareManagerError
-from .platform_utils import _detect_asic_type
 from .spectrum_manager import SpectrumFirmwareManager
 from .bluefield_manager import BluefieldFirmwareManager
 
@@ -34,9 +33,9 @@ from .firmware_base import (
     UpgradeStatusType, UpgradeStatus
 )
 from .firmware_coordinator import FirmwareCoordinator
-from .platform_utils import _detect_platform, _detect_asic_type
+from .platform_utils import _detect_platform
 
-def create_firmware_manager(asic_index: int, pci_id: Optional[str],
+def create_firmware_manager(asic_index: int, pci_id: Optional[str], asic_type: str,
                            fw_bin_path: str = None, verbose: bool = False, clear_semaphore: bool = False) -> FirmwareManagerBase:
     """
     Factory function to create the appropriate firmware manager.
@@ -51,11 +50,6 @@ def create_firmware_manager(asic_index: int, pci_id: Optional[str],
     Returns:
         Appropriate firmware manager instance
     """
-    asic_type = _detect_asic_type()
-
-    if not asic_type:
-        raise FirmwareManagerError("Failed to detect ASIC type")
-
     if asic_type == 'BF3':
         manager = BluefieldFirmwareManager(
             asic_index=asic_index,

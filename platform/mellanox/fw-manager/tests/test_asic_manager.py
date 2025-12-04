@@ -23,7 +23,7 @@ Unit tests for AsicManager class
 import os
 import tempfile
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import patch, mock_open, MagicMock
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -37,10 +37,22 @@ class TestAsicManager(unittest.TestCase):
         """Set up test fixtures"""
         self.temp_dir = tempfile.mkdtemp()
         self.platform = "test-platform"
+        
+        # Mock subprocess.run to return lspci output with a valid Spectrum ASIC
+        self.subprocess_patcher = patch('mellanox_fw_manager.asic_manager.subprocess.run')
+        self.mock_subprocess = self.subprocess_patcher.start()
+
+        # Mock lspci -Dn output
+        mock_result = MagicMock()
+        mock_result.stdout = "0000:01:00.0 0200: 15b3:cb84\n"
+        mock_result.returncode = 0
+        self.mock_subprocess.return_value = mock_result
+        
         self.asic_manager = AsicManager(self.platform)
 
     def tearDown(self):
         """Clean up test fixtures"""
+        self.subprocess_patcher.stop()
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
@@ -61,7 +73,7 @@ class TestAsicManager(unittest.TestCase):
         asic_manager = AsicManager(self.platform)
 
         self.assertEqual(asic_manager._asic_count, 1)
-        self.assertEqual(asic_manager._pci_ids, [])
+        self.assertEqual(asic_manager._pci_ids, ["0000:01:00.0"])
 
     def test_load_asic_data_with_file(self):
         """Test loading ASIC data from asic.conf file"""
@@ -96,7 +108,7 @@ class TestAsicManager(unittest.TestCase):
         asic_manager = AsicManager(self.platform)
 
         self.assertEqual(asic_manager._asic_count, 1)
-        self.assertEqual(asic_manager._pci_ids, ["unknown"])
+        self.assertEqual(asic_manager._pci_ids, ["0000:01:00.0"])
 
     def test_get_asic_count(self):
         """Test getting ASIC count"""
@@ -133,7 +145,7 @@ class TestAsicManager(unittest.TestCase):
             manager = AsicManager("test-platform")
 
             self.assertEqual(manager._asic_count, 1)
-            self.assertEqual(manager._pci_ids, ["01:00.0"])
+            self.assertEqual(manager._pci_ids, ["0000:01:00.0"])
 
     @patch('mellanox_fw_manager.asic_manager.os.path.exists')
     def test_load_asic_data_malformed_num_asic(self, mock_exists):
@@ -145,7 +157,7 @@ class TestAsicManager(unittest.TestCase):
             manager = AsicManager("test-platform")
 
             self.assertEqual(manager._asic_count, 1)
-            self.assertEqual(manager._pci_ids, [])
+            self.assertEqual(manager._pci_ids, ["0000:01:00.0"])
 
     @patch('mellanox_fw_manager.asic_manager.os.path.exists')
     def test_load_asic_data_malformed_dev_id(self, mock_exists):
@@ -169,7 +181,7 @@ class TestAsicManager(unittest.TestCase):
             manager = AsicManager("test-platform")
 
             self.assertEqual(manager._asic_count, -1)
-            self.assertEqual(manager._pci_ids, [])
+            self.assertEqual(manager._pci_ids, ["0000:01:00.0"])
 
     @patch('mellanox_fw_manager.asic_manager.os.path.exists')
     def test_load_asic_data_large_asic_count(self, mock_exists):
@@ -193,7 +205,7 @@ class TestAsicManager(unittest.TestCase):
             manager = AsicManager("test-platform")
 
             self.assertEqual(manager._asic_count, 1)
-            self.assertEqual(manager._pci_ids, [])
+            self.assertEqual(manager._pci_ids, ["0000:01:00.0"])
 
     @patch('mellanox_fw_manager.asic_manager.os.path.exists')
     def test_load_asic_data_with_comments_and_whitespace(self, mock_exists):
@@ -212,6 +224,77 @@ DEV_ID_ASIC_1=02:00.0
 
             self.assertEqual(manager._asic_count, 2)
             self.assertEqual(manager._pci_ids, ["01:00.0", "02:00.0"])
+
+    @patch('mellanox_fw_manager.asic_manager.subprocess.run')
+    @patch('mellanox_fw_manager.asic_manager.os.path.exists')
+    def test_multi_asic_detection_all_devices_found(self, mock_exists, mock_subprocess):
+        """Test multi-ASIC detection when all configured devices are found"""
+        # Mock asic.conf with 4 ASICs
+        asic_conf_content = """NUM_ASIC=4
+DEV_ID_ASIC_0=0000:01:10.0
+DEV_ID_ASIC_1=0000:02:11.0
+DEV_ID_ASIC_2=0000:03:12.0
+DEV_ID_ASIC_3=0000:04:13.0
+"""
+        # Mock lspci output with 4 Mellanox devices (cf82 = SPC5)
+        lspci_output = """0000:00:00.0 0600: 8086:1237 (rev 02)
+0000:01:10.0 0200: 15b3:cf82
+0000:02:11.0 0200: 15b3:cf82
+0000:03:12.0 0200: 15b3:cf82
+0000:04:13.0 0200: 15b3:cf82
+"""
+        mock_exists.return_value = True
+        mock_result = MagicMock()
+        mock_result.stdout = lspci_output
+        mock_result.returncode = 0
+        mock_subprocess.return_value = mock_result
+
+        with patch('builtins.open', mock_open(read_data=asic_conf_content)):
+            manager = AsicManager("test-platform")
+
+            self.assertEqual(manager._asic_count, 4)
+            self.assertEqual(manager._asic_type, 'SPC5')
+            self.assertEqual(manager._pci_ids, [
+                "0000:01:10.0", "0000:02:11.0", "0000:03:12.0", "0000:04:13.0"
+            ])
+            self.assertTrue(manager.is_multi_asic())
+
+    @patch('mellanox_fw_manager.asic_manager.subprocess.run')
+    @patch('mellanox_fw_manager.asic_manager.os.path.exists')
+    def test_multi_asic_detection_missing_device_warning(self, mock_exists, mock_subprocess):
+        """Test multi-ASIC detection when some configured devices are not found"""
+        # Mock asic.conf with 4 ASICs
+        asic_conf_content = """NUM_ASIC=4
+DEV_ID_ASIC_0=0000:01:10.0
+DEV_ID_ASIC_1=0000:02:11.0
+DEV_ID_ASIC_2=0000:03:12.0
+DEV_ID_ASIC_3=0000:05:14.0
+"""
+        # Mock lspci output with only 3 devices (missing 0000:05:14.0)
+        lspci_output = """0000:00:00.0 0600: 8086:1237 (rev 02)
+0000:01:10.0 0200: 15b3:cf82
+0000:02:11.0 0200: 15b3:cf82
+0000:03:12.0 0200: 15b3:cf82
+"""
+        mock_exists.return_value = True
+        mock_result = MagicMock()
+        mock_result.stdout = lspci_output
+        mock_result.returncode = 0
+        mock_subprocess.return_value = mock_result
+
+        with patch('builtins.open', mock_open(read_data=asic_conf_content)):
+            with self.assertLogs(level='WARNING') as log:
+                manager = AsicManager("test-platform")
+
+                # Should still initialize with configured count
+                self.assertEqual(manager._asic_count, 4)
+                self.assertEqual(manager._asic_type, 'SPC5')
+                # Should keep all configured PCI IDs
+                self.assertEqual(manager._pci_ids, [
+                    "0000:01:10.0", "0000:02:11.0", "0000:03:12.0", "0000:05:14.0"
+                ])
+                # Verify warning was logged for missing device
+                self.assertTrue(any('0000:05:14.0' in msg and 'not found' in msg for msg in log.output))
 
 if __name__ == '__main__':
     unittest.main()

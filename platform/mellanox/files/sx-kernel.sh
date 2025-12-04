@@ -34,7 +34,7 @@ fi
 ASIC_CONF=/usr/share/sonic/device/$PLATFORM/asic.conf
 [ -f $ASIC_CONF ] && . $ASIC_CONF
 
-# Generate PREDEFINED_DEV_PCI_BUS variable for multi-ASIC configuration
+NUM_ASIC=${NUM_ASIC:-1}
 if [ "$NUM_ASIC" -gt 1 ]; then
     PREDEFINED_DEV_PCI_BUS=""
     for i in $(seq 0 $((NUM_ASIC-1))); do

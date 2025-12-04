@@ -50,7 +50,6 @@ class TestBluefieldFirmwareManager(unittest.TestCase):
         }
         defaults.update(kwargs)
         manager = BluefieldFirmwareManager(**defaults)
-        manager.mst_device = "/dev/mst/mt41692_pciconf0"
         manager.fw_file = "/test/fw/fw-BF3.mfa"
         return manager
 
@@ -250,7 +249,7 @@ class TestBluefieldFirmwareManager(unittest.TestCase):
 
         self.assertTrue(result)
         mock_run.assert_called_once_with(
-            ['mlxconfig', '-d', '/dev/mst/mt41692_pciconf0', '-y', 'r'],
+            ['mlxconfig', '-d', '08:00.0', '-y', 'r'],
             capture_output=True, text=True
         )
 
@@ -260,7 +259,6 @@ class TestBluefieldFirmwareManager(unittest.TestCase):
         mock_init_asic.return_value = None
 
         manager = self._create_bluefield_manager()
-        manager.mst_device = None
 
         result = manager.reset_firmware_config()
 
