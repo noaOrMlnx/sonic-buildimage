@@ -695,7 +695,7 @@ start() {
         -v /var/log/mellanox:/var/log/mellanox:rw \
         -v /var/log/sdk_dbg:/var/log/sdk_dbg:rw \
         -v mlnx_sdk_socket$DEV:/var/run/sx_sdk \
-        -v /tmp/nv-syncd-shared/:/tmp \
+        -v /tmp/nv-syncd-shared/$DEV:/tmp \
         -v /var/log/sai_failure_dump:/var/log/sai_failure_dump:rw \
         -v /usr/bin/asic_detect:/usr/bin/asic_detect:rw \
         -e SX_API_SOCKET_FILE=/var/run/sx_sdk/sx_api.sock \

@@ -60,6 +60,9 @@ function startplatform() {
             export FAST_BOOT=1
         fi
 
+        # Clear container's temporary directory before starting
+        rm -rf /tmp/nv-syncd-shared/$DEV 2>/dev/null
+
         local fw_upgrade_args="--status=all"
         if [[ $DEV != "" ]]; then
             fw_upgrade_args="--status=$DEV"
