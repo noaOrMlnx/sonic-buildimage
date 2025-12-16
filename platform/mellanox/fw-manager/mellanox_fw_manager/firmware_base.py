@@ -246,25 +246,49 @@ class FirmwareManagerBase(Process):
         else:
             return os.path.join('/etc/mlnx', fw_filename)
 
+    def _query_firmware_versions(self) -> Tuple[str, str]:
+        """
+        Query firmware versions without retry logic.
+
+        Returns:
+            Tuple of (current_version, available_version)
+
+        Raises:
+            FirmwareManagerError: If query fails or versions cannot be retrieved
+        """
+        cmd = ['mlxfwmanager', '--query-format', 'XML', '-d', self.pci_id]
+        result = self._run_command(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise FirmwareManagerError("Query returned non-zero exit code")
+
+        root = ET.fromstring(result.stdout)
+        current_version = root.find('.//Device/Versions/FW').get('current')
+        psid = root.find('.//Device').get('psid')
+
+        if not current_version or not psid:
+            raise FirmwareManagerError("Version or PSID not found in response")
+
+        available_version = self._get_available_firmware_version(psid)
+        return current_version, available_version
+
     def _get_firmware_versions(self) -> Tuple[Optional[str], Optional[str]]:
-        """Get current and available firmware versions."""
-        try:
-            cmd = ['mlxfwmanager', '--query-format', 'XML', '-d', self.pci_id]
-            result = self._run_command(cmd, capture_output=True, text=True)
-            if result.returncode != 0:
-                return None, None
+        """Get current and available firmware versions with retry logic."""
+        query_retry_count = 0
+        query_retry_count_max = 10
 
-            root = ET.fromstring(result.stdout)
-            current_version = root.find('.//Device/Versions/FW').get('current')
-            psid = root.find('.//Device').get('psid')
+        while query_retry_count < query_retry_count_max:
+            try:
+                return self._query_firmware_versions()
+            except Exception as e:
+                if query_retry_count >= query_retry_count_max - 1:
+                    self.logger.error(f"Failed to get firmware versions after {query_retry_count_max} attempts: {str(e)}")
+                    return None, None
+                self.logger.info(f"Unable to get firmware versions (attempt {query_retry_count + 1}/{query_retry_count_max}): {str(e)}, retrying...")
 
-            if not current_version or not psid:
-                return None, None
+            query_retry_count += 1
+            time.sleep(1)
 
-            available_version = self._get_available_firmware_version(psid)
-            return current_version, available_version
-        except Exception:
-            return None, None
+        return None, None
 
     @abstractmethod
     def _get_available_firmware_version(self, psid: str) -> Optional[str]:
