@@ -431,23 +431,16 @@ class DeviceDataManager:
             return False
 
     @classmethod
-    def wait_sysfs_ready(cls, modules_count, check_eeprom=False, check_temperature=False, timeout=300, interval=1):
+    def wait_sysfs_ready(cls, modules_count, timeout=300, interval=1):
         """
         Wait for sysfs nodes of modules to be ready before proceeding.
         Returns:
             bool: True if wait success else timeout
         """
 
-        sysfs_nodes = ['power_mode', 'power_mode_policy', 'present', 'reset', 'status', 'statuserror']
+        sysfs_nodes = ['present', 'status', 'statuserror']
         if cls.is_module_host_management_mode():
-            sysfs_nodes.extend(['control', 'frequency', 'frequency_support', 'hw_present', 'hw_reset',
-                                'power_good', 'power_limit', 'power_on'])
-
-        if check_temperature:
-            sysfs_nodes.extend(['temperature/input', 'temperature/threshold_hi', 'temperature/threshold_critical_hi'])
-
-        if check_eeprom:
-            sysfs_nodes.extend(['eeprom/'])
+            sysfs_nodes.extend(['control', 'power_on'])
 
         conditions = []
         for sfp_index in range(modules_count):

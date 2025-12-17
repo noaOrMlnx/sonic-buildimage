@@ -74,7 +74,7 @@ class ThermalUpdater:
 
         # Module temperature sysfs nodes
         sfp_count = len(self._sfp_list) if self._sfp_list else 0
-        result = DeviceDataManager.wait_sysfs_ready(sfp_count, check_temperature=True, check_eeprom=True)
+        result = DeviceDataManager.wait_sysfs_ready(sfp_count)
         end_time = time.time()
         elapsed_time = end_time - start_time
 
