@@ -664,6 +664,7 @@ start() {
     if [[ $DEV != "" ]]; then
         mkdir -p /dev/shm/asic$DEV
         ASIC_MNT="-v /dev/sxdevs/sxcdev$(($DEV+1)):/dev/sxdevs/sxcdev:rw \
+            -v /dev/sxdevs/bfdcdev$(($DEV+1)):/dev/sxdevs/bfdcdev:rw \
             -v /dev/shm/asic$DEV:/dev/shm/:rw"
     else
         ASIC_MNT="-v /dev/shm:/dev/shm:rw "
