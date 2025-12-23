@@ -215,6 +215,13 @@ DEVICE_DATA = {
             }
         }
     },
+    'x86_64-nvidia_sn5800_ld-r0': {
+        'thermal': {
+            "capability": {
+                "comex_amb": False
+            }
+        }
+    }
 }
 
 
