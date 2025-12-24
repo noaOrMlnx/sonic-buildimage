@@ -62,7 +62,7 @@ class ModuleHostMgmtInitializer:
                         if not self.initialized:
                             from sonic_platform.device_data import DeviceDataManager
                             logger.log_notice('Waiting for modules to be ready...')
-                            sfp_count = DeviceDataManager.get_sfp_count()
+                            sfp_count = chassis.get_num_sfps()
                             if not DeviceDataManager.wait_sysfs_ready(sfp_count):
                                 logger.log_error('Modules are not ready')
                             else:

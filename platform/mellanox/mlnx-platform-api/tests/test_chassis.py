@@ -130,6 +130,7 @@ class TestChassis:
         assert chassis.get_num_fan_drawers() == 2
 
     @mock.patch('sonic_platform.device_data.DeviceDataManager.is_module_host_management_mode', mock.MagicMock(return_value=False))
+    @mock.patch('sonic_platform.chassis.Chassis.wait_sfp_ready_for_initialization', mock.MagicMock(return_value=True))
     def test_sfp(self):
         # Test get_num_sfps, it should not create any SFP objects
         DeviceDataManager.get_sfp_count = mock.MagicMock(return_value=3)
@@ -190,6 +191,7 @@ class TestChassis:
         sonic_platform.chassis.extract_cpo_ports_index = mock.MagicMock(return_value=[])
 
     @mock.patch('sonic_platform.device_data.DeviceDataManager.is_module_host_management_mode', mock.MagicMock(return_value=False))
+    @mock.patch('sonic_platform.chassis.Chassis.wait_sfp_ready_for_initialization', mock.MagicMock(return_value=True))
     def test_create_sfp_in_multi_thread(self):
         DeviceDataManager.get_sfp_count = mock.MagicMock(return_value=3)
 

@@ -39,6 +39,7 @@ try:
     import select
     import threading
     import time
+    from pathlib import Path
 except ImportError as e:
     raise ImportError (str(e) + "- required module not found")
 
@@ -369,6 +370,37 @@ class Chassis(ChassisBase):
         
         return num_sfps
 
+    def get_sfp_ready_file(self):
+        SFP_READY_HOST_FILE = '/tmp/nv-syncd-shared/sfp_ready'
+        SFP_READY_CONTAINER_FILE = '/tmp/sfp_ready'
+        return SFP_READY_HOST_FILE if utils.is_host() else SFP_READY_CONTAINER_FILE
+
+    def wait_sfp_ready_for_initialization(self):
+        sfp_ready_file = self.get_sfp_ready_file()
+        if os.path.exists(sfp_ready_file):
+            return True
+
+        if not DeviceDataManager.wait_sysfs_ready(self.get_num_sfps()):
+            logger.log_error('SFPs are not ready for initialization')
+            return False
+        logger.log_notice('SFPs are ready for initialization')
+
+        Path(sfp_ready_file).touch(exist_ok=True)
+        return True
+
+    def sfp_wait_ready_and_initialize_legacy(self, sfp_index=None):
+        self.wait_sfp_ready_for_initialization()
+        if sfp_index is not None:
+            self.initialize_single_sfp(sfp_index)
+        else:
+            self.initialize_sfp()
+
+    def sfp_wait_ready_and_initialize(self, sfp_index=None):
+        if DeviceDataManager.is_module_host_management_mode():
+            self.module_host_mgmt_initializer.initialize(self)
+        else:
+            self.sfp_wait_ready_and_initialize_legacy(sfp_index)
+
     def get_all_sfps(self):
         """
         Retrieves all sfps available on this chassis
@@ -377,10 +409,7 @@ class Chassis(ChassisBase):
             A list of objects derived from SfpBase representing all sfps
             available on this chassis
         """    
-        if DeviceDataManager.is_module_host_management_mode():
-            self.module_host_mgmt_initializer.initialize(self)
-        else:
-            self.initialize_sfp()
+        self.sfp_wait_ready_and_initialize()
         return self._sfp_list
 
     def get_sfp(self, index):
@@ -397,10 +426,7 @@ class Chassis(ChassisBase):
             An object dervied from SfpBase representing the specified sfp
         """
         index = index - 1
-        if DeviceDataManager.is_module_host_management_mode():
-            self.module_host_mgmt_initializer.initialize(self)
-        else:
-            self.initialize_single_sfp(index)
+        self.sfp_wait_ready_and_initialize(index)
         return super(Chassis, self).get_sfp(index)
 
     def get_port_or_cage_type(self, index):
@@ -450,11 +476,10 @@ class Chassis(ChassisBase):
                       indicates that fan 0 has been removed, fan 2
                       has been inserted and sfp 11 has been removed.
         """
+        self.sfp_wait_ready_and_initialize()
         if DeviceDataManager.is_module_host_management_mode():
-            self.module_host_mgmt_initializer.initialize(self)
             return self.get_change_event_for_module_host_management_mode(timeout)
         else:
-            self.initialize_sfp()
             return self.get_change_event_legacy(timeout)
             
     def get_change_event_for_module_host_management_mode(self, timeout):
