@@ -375,31 +375,48 @@ class Chassis(ChassisBase):
         SFP_READY_CONTAINER_FILE = '/tmp/sfp_ready'
         return SFP_READY_HOST_FILE if utils.is_host() else SFP_READY_CONTAINER_FILE
 
-    def wait_sfp_ready_for_initialization(self):
+    def wait_sfp_eeprom_ready(self):
+        if DeviceDataManager.is_simx_platform():
+            return True
+
+        eeprom_checks = []
+        for sfp in self._sfp_list:
+            if not sfp:
+                continue
+            sfp_idx = sfp.sdk_index
+            if self.RJ45_port_list and sfp_idx in self.RJ45_port_list or self.cpo_port_list and sfp_idx in self.cpo_port_list:
+                continue
+            eeprom_checks.append(lambda sfp=sfp: sfp.check_eeprom_ready_if_present())
+
+        return utils.wait_until_conditions(eeprom_checks, 10, interval=1)
+
+    def wait_sfp_ready_for_use(self):
         sfp_ready_file = self.get_sfp_ready_file()
         if os.path.exists(sfp_ready_file):
             return True
 
         if not DeviceDataManager.wait_sysfs_ready(self.get_num_sfps()):
-            logger.log_error('SFPs are not ready for initialization')
+            logger.log_error('SFPs are not ready for usage')
             return False
-        logger.log_notice('SFPs are ready for initialization')
+
+        if not self.wait_sfp_eeprom_ready():
+            logger.log_error('SFPs are not ready for usage due to eeprom not ready')
+            return False
 
         Path(sfp_ready_file).touch(exist_ok=True)
+
+        logger.log_notice('SFPs are ready for usage')
         return True
 
-    def sfp_wait_ready_and_initialize_legacy(self, sfp_index=None):
-        self.wait_sfp_ready_for_initialization()
-        if sfp_index is not None:
-            self.initialize_single_sfp(sfp_index)
-        else:
-            self.initialize_sfp()
+    def sfp_wait_ready_and_initialize_legacy(self):
+        self.initialize_sfp()
+        self.wait_sfp_ready_for_use()
 
-    def sfp_wait_ready_and_initialize(self, sfp_index=None):
+    def sfp_wait_ready_and_initialize(self):
         if DeviceDataManager.is_module_host_management_mode():
             self.module_host_mgmt_initializer.initialize(self)
         else:
-            self.sfp_wait_ready_and_initialize_legacy(sfp_index)
+            self.sfp_wait_ready_and_initialize_legacy()
 
     def get_all_sfps(self):
         """
@@ -426,7 +443,7 @@ class Chassis(ChassisBase):
             An object dervied from SfpBase representing the specified sfp
         """
         index = index - 1
-        self.sfp_wait_ready_and_initialize(index)
+        self.sfp_wait_ready_and_initialize()
         return super(Chassis, self).get_sfp(index)
 
     def get_port_or_cage_type(self, index):

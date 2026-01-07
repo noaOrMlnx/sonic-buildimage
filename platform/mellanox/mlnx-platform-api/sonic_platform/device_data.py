@@ -424,8 +424,8 @@ class DeviceDataManager:
                 return False
             if p.is_dir():
                 return True
-            with open(path, "r") as f:
-                f.read()
+            with open(path, "rb", buffering=0) as f:
+                f.read(1)
             return True
         except:
             return False
@@ -446,7 +446,6 @@ class DeviceDataManager:
         for sfp_index in range(modules_count):
             for sysfs_node in sysfs_nodes:
                 conditions.append(lambda idx=sfp_index, node=sysfs_node: cls.check_sysfs_access(f'/sys/module/sx_core/asic0/module{idx}/{node}'))
-
         return utils.wait_until_conditions(conditions, timeout, interval)
 
     @classmethod

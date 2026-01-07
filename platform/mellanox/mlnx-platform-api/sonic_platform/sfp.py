@@ -479,6 +479,18 @@ class SFP(NvidiaSFPCommon):
         for s in not_ready_list:
             logger.log_error(f'SFP {s.sdk_index} eeprom is not ready')
 
+    def check_eeprom_ready_if_present(self):
+        """
+        Check if the eeprom is ready for a present SFP
+
+        Returns:
+            bool: False if the SFP is present and the eeprom is not ready, True otherwise
+        """
+        presence_file =  'hw_present' if self.is_sw_control() else 'present'
+        if utils.read_int_from_file(f'/sys/module/sx_core/asic0/module{self.sdk_index}/{presence_file}', log_func=None) != 1:
+            return True
+        return self._read_eeprom(0, 1, log_on_error=False) is not None
+
     # read eeprom specfic bytes beginning from offset with size as num_bytes
     def read_eeprom(self, offset, num_bytes):
         """
