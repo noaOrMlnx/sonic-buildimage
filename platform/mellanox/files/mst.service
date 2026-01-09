@@ -17,16 +17,13 @@
 #
 
 [Unit]
-Description=Mellanox Firmware Manager Service
-Requires=mst.service
-After=mst.service
+Description=Mellanox MST Service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=/bin/grep -qv '\<SONIC_BOOT_TYPE=fastfast\>' /proc/cmdline
-ExecStart=/usr/local/bin/mlnx-fw-manager --clear-semaphore --verbose
-TimeoutSec=300
+ExecStart=/usr/bin/mst start --with_i2cdev
+ExecStop=/usr/bin/mst stop
 User=root
 
 [Install]
