@@ -53,7 +53,7 @@ class TestDeviceData:
     def test_get_bios_component(self):
         assert DeviceDataManager.get_bios_component() is not None
 
-    @mock.patch('sonic_py_common.device_info.get_paths_to_platform_and_hwsku_dirs', mock.MagicMock(return_value=('', '/tmp')))
+    @mock.patch('sonic_platform.utils.get_path_to_hwsku_directory', mock.MagicMock(return_value='/tmp'))
     @mock.patch('sonic_platform.device_data.utils.read_key_value_file')
     def test_is_module_host_management_mode(self, mock_read):
         mock_read.return_value = {}

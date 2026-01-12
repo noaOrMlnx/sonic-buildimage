@@ -319,13 +319,20 @@ def extract_asic_id_map(num_of_asics=1):
     return asic_id_map
 
 
-def get_path_list_to_asic_hwsku_dir(num_of_asics):
+def get_path_to_hwsku_directory(asic_id=None):
     platform_path = device_info.get_path_to_platform_dir()
     hwsku = device_info.get_hwsku()
-    if num_of_asics == 1:
-        return [os.path.join(platform_path, hwsku, HWSKU_JSON)]
+    if asic_id is not None:
+        return os.path.join(platform_path, hwsku, str(asic_id))
     else:
-        return [os.path.join(platform_path, hwsku, str(asic_id), HWSKU_JSON) for asic_id in range(num_of_asics)]
+        return os.path.join(platform_path, hwsku)
+
+
+def get_path_list_to_asic_hwsku_dir(num_of_asics):
+    if num_of_asics == 1:
+        return [os.path.join(get_path_to_hwsku_directory(), HWSKU_JSON)]
+    else:
+        return [os.path.join(get_path_to_hwsku_directory(asic_id), HWSKU_JSON) for asic_id in range(num_of_asics)]
 
 
 def wait_until(predict, timeout, interval=1, *args, **kwargs):

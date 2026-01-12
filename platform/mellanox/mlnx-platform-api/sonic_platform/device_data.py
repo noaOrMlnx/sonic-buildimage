@@ -403,8 +403,8 @@ class DeviceDataManager:
     def is_module_host_management_mode(cls):
         sai_profile_file = '/tmp/sai.profile'
         if not os.path.exists(sai_profile_file):
-            from sonic_py_common import device_info
-            _, hwsku_dir = device_info.get_paths_to_platform_and_hwsku_dirs()
+            asic_id = 0 if cls.is_multi_asic_platform() else None
+            hwsku_dir = utils.get_path_to_hwsku_directory(asic_id=asic_id)
             sai_profile_file = os.path.join(hwsku_dir, 'sai.profile')
         data = utils.read_key_value_file(sai_profile_file, delimeter='=')
         return data.get('SAI_INDEPENDENT_MODULE_MODE') == '1'
