@@ -26,6 +26,8 @@
 try:
     from sonic_platform_base.chassis_base import ChassisBase
     from sonic_py_common.logger import Logger
+    from .inotify_helper import InotifyEventHelper
+    from collections import defaultdict
     import os
     from sonic_py_common import device_info
     from functools import reduce
@@ -129,6 +131,9 @@ class Chassis(ChassisBase):
         self._cpo_port_list = None
         # Mapping from SFP index to ASIC ID
         self._asic_id_map = None
+        # Mapping asic ID to list of SFP indices
+        # values are set of SFP indices to not have sfp duplications per asic
+        self._asic_modules_dict = defaultdict(set)
 
         self.liquid_cooling = None
 
@@ -334,6 +339,8 @@ class Chassis(ChassisBase):
                                 sfp_object = sfp_module.CpoPort(index, asic_id=asic_id)
                             else:
                                 sfp_object = sfp_module.SFP(index, asic_id=asic_id)
+                            # populate the asic_modules_dict with the sfp index
+                            self._asic_modules_dict[asic_id].add(index)
                             self._sfp_list.append(sfp_object)
                         self.sfp_initialized_count = sfp_count
                     elif self.sfp_initialized_count != len(self._sfp_list):
@@ -498,10 +505,40 @@ class Chassis(ChassisBase):
         """
         self.sfp_wait_ready_and_initialize()
         if DeviceDataManager.is_module_host_management_mode():
-            return self.get_change_event_for_module_host_management_mode(timeout)
+            self.module_host_mgmt_initializer.initialize(self)
+            change_events_dict = self.get_change_event_for_module_host_management_mode(timeout)
         else:
-            return self.get_change_event_legacy(timeout)
-            
+            self.initialize_sfp()
+            change_events_dict = self.get_change_event_legacy(timeout)
+
+        # if asic becomes not available, generate not present events for its modules and add to change_events_dict
+        asic_events_dict = self.get_asic_change_event(timeout=500)
+        if asic_events_dict:
+            change_events_dict.setdefault('sfp', {}).update(asic_events_dict)
+        return True, change_events_dict
+    
+    def get_asic_change_event(self, timeout=500):
+        asic_ready_files = []
+        changes = {}
+        asic_count = DeviceDataManager.get_asic_count()
+        filenames = {f"asic{asic_index}_ready" for asic_index in range(asic_count)}
+        asic_ready_dir = "/var/run/hw-management/config"
+
+        asic_ready_watcher = InotifyEventHelper(asic_ready_dir, filenames)
+        changed_paths = asic_ready_watcher.wait_for_events(timeout)
+
+        for path in changed_paths:
+            if not os.path.exists(path) or utils.read_int_from_file(path) == 0:
+                self.module_host_mgmt_initializer.set_asic_ready_value(asic_id, False)
+                # if an asic becomes not available, generate not present events for its modules and add to changes
+                name = os.path.basename(path)
+                asic_id = int(name.removeprefix("asic").removesuffix("_ready"))
+                self.module_host_mgmt_initializer.set_asic_ready_value(asic_id, False)
+                sfp_indices = self._asic_modules_dict[asic_id]
+                for i in sfp_indices:
+                    changes[str(i)] = '0'
+        return changes
+
     def get_change_event_for_module_host_management_mode(self, timeout):
         """Get SFP change event when module host management mode is enabled.
 
@@ -510,8 +547,7 @@ class Chassis(ChassisBase):
                 this method will block until a change is detected.
 
         Returns:
-            (bool, dict):
-                - True if call successful, False if not; - Deprecated, will always return True
+            dict:
                 - A nested dictionary where key is a device type,
                   value is a dictionary with key:value pairs in the format of
                   {'device_id':'device_event'},
@@ -621,7 +657,7 @@ class Chassis(ChassisBase):
             if port_dict:
                 logger.log_notice(f'Sending SFP change event: {port_dict}, error event: {error_dict}')
                 self.reinit_sfps(port_dict)
-                return True, {
+                return {
                     'sfp': port_dict,
                     'sfp_error': error_dict
                 }
@@ -629,7 +665,7 @@ class Chassis(ChassisBase):
                 if not wait_forever:
                     elapse = time.monotonic() - begin
                     if elapse * 1000 >= timeout:
-                        return True, {'sfp': {}}
+                        return {'sfp': {}}
 
     def get_change_event_legacy(self, timeout):
         """Get SFP change event when module host management is disabled.
@@ -638,8 +674,7 @@ class Chassis(ChassisBase):
             timeout (int): polling timeout in ms
 
         Returns:
-            (bool, dict):
-                - True if call successful, False if not; - Deprecated, will always return True
+            dict:
                 - A nested dictionary where key is a device type,
                   value is a dictionary with key:value pairs in the format of
                   {'device_id':'device_event'},
@@ -728,7 +763,7 @@ class Chassis(ChassisBase):
             if port_dict:
                 logger.log_notice(f'Sending SFP change event: {port_dict}, error event: {error_dict}')
                 self.reinit_sfps(port_dict)
-                return True, {
+                return {
                     'sfp': port_dict,
                     'sfp_error': error_dict
                 }
@@ -736,7 +771,7 @@ class Chassis(ChassisBase):
                 if not wait_forever:
                     elapse = time.monotonic() - begin
                     if elapse * 1000 >= timeout:
-                        return True, {'sfp': {}}
+                        return {'sfp': {}}
 
     def reinit_sfps(self, port_dict):
         """

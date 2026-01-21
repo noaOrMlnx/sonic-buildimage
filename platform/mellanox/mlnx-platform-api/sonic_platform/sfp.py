@@ -468,16 +468,23 @@ class SFP(NvidiaSFPCommon):
         Returns:
             bool: True if device is present, False if not
         """
-
-        try:
-            presence_file =  'hw_present' if self.is_sw_control() else 'present'
-            if utils.read_int_from_file(f'/sys/module/sx_core/asic0/module{self.sdk_index}/{presence_file}', log_func=None) != 1:
-                return False
-            eeprom_raw = self._read_eeprom(0, 1, log_on_error=False)
-            return eeprom_raw is not None
-        except Exception as e:
-            logger.log_warning(f'Failed to check presence of SFP {self.sdk_index}: {e}')
-            return False
+        asic_id = self.get_asic_id()
+        if utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_id}_ready') == 1:
+            ready_asics = []
+            from .module_host_mgmt_initializer import ASIC_READY_CONTAINER_FILE
+            import fcntl
+            with open(ASIC_READY_CONTAINER_FILE, 'r') as asic_ready_file:
+                fcntl.flock(asic_ready_file.fileno(), fcntl.LOCK_SH)
+                try:
+                    ready_asics = {line.strip() for line in asic_ready_file}
+                finally:
+                    fcntl.flock(asic_ready_file.fileno(), fcntl.LOCK_UN)
+            if ready_asics and asic_id in ready_asics:
+                presence_file = 'hw_present' if self.is_sw_control() else 'present'
+                presence_sysfs = f'/sys/module/sx_core/asic0/module{self.sdk_index}/{presence_file}'
+                if utils.read_int_from_file(presence_sysfs, log_func=None) == 1:
+                    return True
+        return False
 
     @classmethod
     def wait_sfp_eeprom_ready(cls, sfp_list, wait_time):

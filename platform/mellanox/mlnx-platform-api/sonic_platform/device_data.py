@@ -399,9 +399,18 @@ class DeviceDataManager:
     @classmethod
     def wait_platform_ready(cls):
         """
-        Legacy function for backward compatibility
+        Wait for Nvidia platform related services(SDK, hw-management) ready
+        asicN_ready file will indicate for each asic whether it is ready. 
+        Returns:
+            bool: True if wait success else timeout
         """
-        return True
+        conditions = []
+        asic_count = get_asic_count()
+        for asic_index in range(asic_count):
+            conditions.append(lambda: utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_index}_ready') == 1)
+
+        # In multi-asic case, wait for only one asic to be ready, and start pmon processes
+        return utils.wait_until_one_condition(conditions, 300, 1)
 
     @classmethod
     def check_sysfs_access(cls, path):
