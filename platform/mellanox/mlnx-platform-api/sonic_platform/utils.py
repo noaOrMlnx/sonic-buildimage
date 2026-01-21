@@ -379,7 +379,27 @@ def wait_until_conditions(conditions, timeout, interval=1):
         timeout -= interval
     return False
 
-  
+def wait_until_one_condition(conditions, timeout, interval=1):
+    """
+    Wait until one of the conditions to become true
+    Args:
+        conditions (list): a list of callable which generate True|False
+        timeout (int): wait time in seconds
+        interval (int, optional):  interval to check the predict. Defaults to 1.
+
+    Returns:
+        bool: True if wait success else False
+    """
+    while timeout > 0:
+        for condition in conditions:
+            if condition():
+                return True
+
+        time.sleep(interval)
+        timeout -= interval
+    return False
+
+
 class TimerEvent:
     def __init__(self, interval, cb, repeat):
         self.interval = interval

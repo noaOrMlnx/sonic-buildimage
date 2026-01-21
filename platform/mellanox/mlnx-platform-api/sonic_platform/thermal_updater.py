@@ -143,16 +143,25 @@ class ThermalUpdater:
             )
 
     def get_asic_temp(self, asic_index=0):
+        if utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_index}_ready') == 0:
+            logger.log_warning(f'ASIC {asic_index} is not ready, cannot check asic temprature')
+            return None
         temperature = utils.read_int_from_file(f'/sys/module/sx_core/asic{asic_index}/temperature/input', default=None)
         return temperature * ASIC_TEMPERATURE_SCALE if temperature is not None else None
 
     def get_asic_temp_warning_threshold(self, asic_index=0):
-        emergency = utils.read_int_from_file(f'/sys/module/sx_core/asic{asic_index}/temperature/emergency', default=None, log_func=None)
-        return emergency * ASIC_TEMPERATURE_SCALE if emergency is not None else ASIC_DEFAULT_TEMP_WARNNING_THRESHOLD
+        if utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_index}_ready') == 0:
+            logger.log_warning(f'ASIC {asic_index} is not ready, cannot check asic temprature warning threshold')
+            return None
+        temp_warning = utils.read_int_from_file(f'/sys/module/sx_core/asic{asic_index}/temperature/critical', default=None, log_func=None)
+        return temp_warning * ASIC_TEMPERATURE_SCALE if temp_warning is not None else ASIC_DEFAULT_TEMP_WARNNING_THRESHOLD
 
     def get_asic_temp_critical_threshold(self, asic_index=0):
-        critical = utils.read_int_from_file(f'/sys/module/sx_core/asic{asic_index}/temperature/critical', default=None, log_func=None)
-        return critical * ASIC_TEMPERATURE_SCALE if  critical is not None else ASIC_DEFAULT_TEMP_CRITICAL_THRESHOLD
+        if utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_index}_ready') == 0:
+            logger.log_warning(f'ASIC {asic_index} is not ready, cannot check asic temprature critical threshold')
+            return None
+        temp_critical = utils.read_int_from_file(f'/sys/module/sx_core/asic{asic_index}/temperature/emergency', default=None, log_func=None)
+        return temp_critical * ASIC_TEMPERATURE_SCALE if temp_critical is not None else ASIC_DEFAULT_TEMP_CRITICAL_THRESHOLD
 
     def update_single_module(self, sfp):
         try:
