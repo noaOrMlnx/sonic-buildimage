@@ -30,6 +30,7 @@ import fcntl
 MODULE_READY_MAX_WAIT_TIME = 300
 MODULE_READY_CHECK_INTERVAL = 5
 ASIC_READY_CONTAINER_FILE = '/tmp/module_host_mgmt_asic_ready'
+MODULE_READY_CONTAINER_FILE = '/tmp/module_host_mgmt_ready'
 MODULE_READY_HOST_FILE = '/tmp/nv-syncd-shared/module_host_mgmt_ready'
 DEDICATE_INIT_DAEMON = 'xcvrd'
 initialization_owner = False
@@ -72,7 +73,7 @@ class ModuleHostMgmtInitializer:
                     with self.lock:
                         # Double check if the asics are not available
                         not_initialized = []
-                        for i in range(self.initialized_list):
+                        for i in range(len(self.initialized_list)):
                             if not self.initialized_list[i]:
                                 not_initialized.append(i)
 
@@ -153,24 +154,24 @@ class ModuleHostMgmtInitializer:
             finally:
                 fcntl.flock(file.fileno(), fcntl.LOCK_UN)
 
-    def wait_module_ready(self):
-        """Wait up to MODULE_READY_MAX_WAIT_TIME seconds for all modules to be ready
-        """
-        if utils.is_host():
-            module_ready_file = MODULE_READY_HOST_FILE
-        else:
-            module_ready_file = MODULE_READY_CONTAINER_FILE
+    # def wait_module_ready(self):
+    #     """Wait up to MODULE_READY_MAX_WAIT_TIME seconds for all modules to be ready
+    #     """
+    #     if utils.is_host():
+    #         module_ready_file = MODULE_READY_HOST_FILE
+    #     else:
+    #         module_ready_file = MODULE_READY_CONTAINER_FILE
 
-        if os.path.exists(module_ready_file):
-            self.initialized = True
-            return
-        else:
-            print('Waiting module to be initialized...')
+    #     if os.path.exists(module_ready_file):
+    #         self.initialized = True
+    #         return
+    #     else:
+    #         print('Waiting module to be initialized...')
         
-        if utils.wait_until(os.path.exists, MODULE_READY_MAX_WAIT_TIME, MODULE_READY_CHECK_INTERVAL, module_ready_file):
-            self.initialized = True
-        else:
-            logger.log_error('Module initialization timeout', True)
+    #     if utils.wait_until(os.path.exists, MODULE_READY_MAX_WAIT_TIME, MODULE_READY_CHECK_INTERVAL, module_ready_file):
+    #         self.initialized = True
+    #     else:
+    #         logger.log_error('Module initialization timeout', True)
             
     def is_initialization_owner(self):
         """Indicate whether current thread is the owner of doing module initialization

@@ -518,7 +518,6 @@ class Chassis(ChassisBase):
         return True, change_events_dict
     
     def get_asic_change_event(self, timeout=500):
-        asic_ready_files = []
         changes = {}
         asic_count = DeviceDataManager.get_asic_count()
         filenames = {f"asic{asic_index}_ready" for asic_index in range(asic_count)}
