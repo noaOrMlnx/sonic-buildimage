@@ -400,13 +400,14 @@ class DeviceDataManager:
     def wait_platform_ready(cls):
         """
         Wait for Nvidia platform related services(SDK, hw-management) ready
-        asicN_ready file will indicate for each asic whether it is ready. 
+        asicN_ready file will indicate for each asic whether it is ready.
+        if asic_id = 0, asic1_ready will indicate for it.
         Returns:
             bool: True if wait success else timeout
         """
         conditions = []
-        asic_count = get_asic_count()
-        for asic_index in range(asic_count):
+        asic_count = cls.get_asic_count()
+        for asic_index in range(1, asic_count + 1):
             conditions.append(lambda: utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_index}_ready') == 1)
 
         # In multi-asic case, wait for only one asic to be ready, and start pmon processes

@@ -468,8 +468,9 @@ class SFP(NvidiaSFPCommon):
         Returns:
             bool: True if device is present, False if not
         """
-        asic_id = self.get_asic_id()
-        if utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_id}_ready') == 1:
+        asic_id = self.asic_id
+        asic_id_for_file = "asic" + str(int(asic_id.replace("asic", "")) + 1)
+        if utils.read_int_from_file(f'/var/run/hw-management/config/{asic_id_for_file}_ready') == 1:
             ready_asics = []
             from .module_host_mgmt_initializer import ASIC_READY_CONTAINER_FILE
             import fcntl
@@ -1656,7 +1657,7 @@ class SFP(NvidiaSFPCommon):
             sfp_list (object): all sfps
         """
         wait_ready_task = cls.get_wait_ready_task()
-        wait_ready_task.start()
+        wait_ready_task.start_once()
         
         for s in sfp_list:
             s.on_event(EVENT_START)
@@ -1689,6 +1690,7 @@ class SFP(NvidiaSFPCommon):
             logger.log_notice(f'SFP {index} is in state {s.state} after module initialization')
 
         cls.wait_sfp_eeprom_ready(sfp_list, 2)
+        # should we kill here the wait_ready_task?
         
 class RJ45Port(NvidiaSFPCommon):
     """class derived from SFP, representing RJ45 ports"""

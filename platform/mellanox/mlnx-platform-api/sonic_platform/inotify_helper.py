@@ -84,12 +84,12 @@ class InotifyEventHelper():
         )
 
     def wait_for_events(self, timeout_ms):
-        chaged_files = set()
+        changed_files = set()
 
         for event in self.inotify_obj.event_gen(timeout_s=timeout_ms/1000,
                                                 yield_nones=False):
             (_, _, path, filename) = event
             if path == self.dir_path and filename in self.file_names:
-                chaged_paths.add(os.path.join(path, filename))
+                changed_files.add(os.path.join(path, filename))
 
-        return list(chaged_paths)
+        return list(changed_files)

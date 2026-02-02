@@ -58,7 +58,7 @@ class ModuleHostMgmtInitializer:
         """
         global initialization_owner
         not_initialized = []
-        for i in range(self.initialized_list):
+        for i in range(len(self.initialized_list)):
             if not self.initialized_list[i]:
                 not_initialized.append(i)
 
@@ -93,16 +93,20 @@ class ModuleHostMgmtInitializer:
                             asic_ready_list = []
                             sfp_list = []
                             for asic_id in not_initialized:
-                                if utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_id}_ready') == 1:
+                                asic_id_for_file = asic_id + 1
+                                if utils.read_int_from_file(f'/var/run/hw-management/config/asic{asic_id_for_file}_ready') == 1:
                                     asic_ready_list.append(asic_id)
+                                    asic_id = f'asic{asic_id}'
                                     sfp_list.extend(chassis._asic_modules_dict[asic_id])
                             from .sfp import SFP
                             if sfp_list:
                                 SFP.initialize_sfp_modules(sfp_list)
                                 self.add_asics_to_ready_file(asic_ready_list)
-                                for asic_id in asic_ready_list:
-                                    self.initialized_list[asic_id] = True
+                                for asic_index in asic_ready_list:
+                                    #asic_id = f'asic{asic_index}'
+                                    self.initialized_list[asic_index] = True
                                 logger.log_notice('Module initialization for module host management done')
+                            not_initialized = []
             else:
                 chassis.initialize_sfp()
 
