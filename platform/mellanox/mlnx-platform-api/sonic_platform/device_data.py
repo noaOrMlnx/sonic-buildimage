@@ -207,6 +207,21 @@ DEVICE_DATA = {
                 "comex_amb": False
             }
         }
+    },
+    'x86_64-nvidia_sn5800_ld_simx-r0': {
+        'thermal': {
+            "capability": {
+                "cpu_pack": False,
+                "comex_amb": False,
+            }
+        }
+    },
+    'x86_64-nvidia_sn5800_ld-r0': {
+        'thermal': {
+            "capability": {
+                "comex_amb": False
+            }
+        }
     }
 }
 

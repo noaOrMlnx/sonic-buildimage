@@ -1,0 +1,2058 @@
+{
+    "interfaces": {
+        "Ethernet1536": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1537": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1538": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1539": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1540": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1541": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1542": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1543": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1544": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1545": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1546": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1547": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1548": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1549": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1550": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1551": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1552": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1553": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1554": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1555": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1556": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1557": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1558": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1559": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1560": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1561": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1562": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1563": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1564": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1565": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1566": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1567": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1568": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1569": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1570": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1571": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1572": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1573": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1574": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1575": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1576": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1577": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1578": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1579": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1580": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1581": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1582": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1583": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1584": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1585": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1586": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1587": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1588": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1589": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1590": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1591": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1592": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1593": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1594": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1595": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1596": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1597": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1598": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1599": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1600": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1601": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1602": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1603": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1604": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1605": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1606": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1607": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1608": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1609": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1610": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1611": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1612": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1613": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1614": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1615": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1616": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1617": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1618": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1619": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1620": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1621": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1622": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1623": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1624": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1625": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1626": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1627": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1628": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1629": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1630": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1631": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1632": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1633": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1634": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1635": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1636": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1637": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1638": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1639": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1640": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1641": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1642": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1643": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1644": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1645": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1646": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1647": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1648": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1649": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1650": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1651": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1652": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1653": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1654": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1655": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1656": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1657": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1658": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1659": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1660": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1661": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1662": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1663": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1664": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1665": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1666": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1667": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1668": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1669": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1670": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1671": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1672": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1673": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1674": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1675": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1676": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1677": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1678": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1679": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1680": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1681": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1682": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1683": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1684": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1685": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1686": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1687": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1688": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1689": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1690": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1691": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1692": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1693": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1694": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1695": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1696": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1697": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1698": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1699": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1700": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1701": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1702": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1703": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1704": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1705": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1706": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1707": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1708": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1709": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1710": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1711": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1712": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1713": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1714": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1715": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1716": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1717": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1718": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1719": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1720": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1721": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1722": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1723": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1724": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1725": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1726": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1727": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1728": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1729": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1730": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1731": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1732": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1733": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1734": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1735": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1736": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1737": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1738": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1739": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1740": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1741": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1742": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1743": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1744": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1745": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1746": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1747": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1748": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1749": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1750": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1751": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1752": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1753": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1754": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1755": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1756": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1757": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1758": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1759": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1760": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1761": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1762": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1763": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1764": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1765": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1766": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1767": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1768": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1769": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1770": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1771": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1772": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1773": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1774": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1775": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1776": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1777": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1778": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1779": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1780": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1781": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1782": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1783": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1784": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1785": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1786": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1787": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1788": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1789": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1790": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1791": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1792": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1793": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1794": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1795": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1796": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1797": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1798": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1799": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1800": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1801": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1802": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1803": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1804": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1805": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1806": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1807": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1808": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1809": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1810": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1811": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1812": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1813": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1814": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1815": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1816": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1817": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1818": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1819": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1820": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1821": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1822": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1823": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1824": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1825": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1826": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1827": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1828": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1829": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1830": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1831": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1832": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1833": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1834": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1835": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1836": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1837": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1838": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1839": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1840": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1841": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1842": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1843": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1844": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1845": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1846": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1847": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1848": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1849": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1850": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1851": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1852": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1853": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1854": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1855": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1856": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1857": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1858": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1859": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1860": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1861": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1862": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1863": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1864": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1865": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1866": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1867": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1868": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1869": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1870": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1871": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1872": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1873": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1874": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1875": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1876": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1877": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1878": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1879": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1880": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1881": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1882": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1883": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1884": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1885": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1886": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1887": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1888": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1889": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1890": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1891": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1892": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1893": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1894": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1895": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1896": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1897": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1898": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1899": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1900": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1901": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1902": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1903": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1904": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1905": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1906": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1907": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1908": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1909": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1910": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1911": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1912": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1913": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1914": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1915": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1916": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1917": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1918": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1919": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1920": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1921": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1922": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1923": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1924": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1925": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1926": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1927": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1928": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1929": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1930": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1931": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1932": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1933": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1934": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1935": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1936": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1937": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1938": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1939": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1940": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1941": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1942": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1943": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1944": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1945": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1946": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1947": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1948": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1949": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1950": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1951": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1952": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1953": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1954": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1955": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1956": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1957": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1958": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1959": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1960": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1961": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1962": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1963": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1964": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1965": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1966": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1967": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1968": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1969": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1970": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1971": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1972": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1973": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1974": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1975": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1976": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1977": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1978": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1979": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1980": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1981": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1982": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1983": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1984": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1985": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1986": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1987": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1988": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1989": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1990": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1991": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1992": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1993": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1994": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1995": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1996": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1997": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1998": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet1999": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2000": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2001": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2002": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2003": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2004": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2005": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2006": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2007": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2008": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2009": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2010": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2011": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2012": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2013": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2014": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2015": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2016": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2017": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2018": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2019": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2020": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2021": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2022": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2023": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2024": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2025": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2026": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2027": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2028": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2029": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2030": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2031": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2032": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2033": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2034": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2035": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2036": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2037": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2038": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2039": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2040": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2041": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2042": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2043": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2044": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2045": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2046": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2047": {
+            "default_brkout_mode": "1x100G",
+            "port_type": "CPO"
+        },
+        "Ethernet2054": {
+            "default_brkout_mode": "1x100G"
+        },
+        "Ethernet2055": {
+            "default_brkout_mode": "1x100G"
+        }
+    }
+}
