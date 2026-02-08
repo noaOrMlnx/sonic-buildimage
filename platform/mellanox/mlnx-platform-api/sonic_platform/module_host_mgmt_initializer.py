@@ -30,8 +30,6 @@ import fcntl
 MODULE_READY_MAX_WAIT_TIME = 300
 MODULE_READY_CHECK_INTERVAL = 5
 ASIC_READY_CONTAINER_FILE = '/tmp/module_host_mgmt_asic_ready'
-MODULE_READY_CONTAINER_FILE = '/tmp/module_host_mgmt_ready'
-MODULE_READY_HOST_FILE = '/tmp/nv-syncd-shared/module_host_mgmt_ready'
 DEDICATE_INIT_DAEMON = 'xcvrd'
 initialization_owner = False
 
@@ -158,25 +156,6 @@ class ModuleHostMgmtInitializer:
             finally:
                 fcntl.flock(file.fileno(), fcntl.LOCK_UN)
 
-    # def wait_module_ready(self):
-    #     """Wait up to MODULE_READY_MAX_WAIT_TIME seconds for all modules to be ready
-    #     """
-    #     if utils.is_host():
-    #         module_ready_file = MODULE_READY_HOST_FILE
-    #     else:
-    #         module_ready_file = MODULE_READY_CONTAINER_FILE
-
-    #     if os.path.exists(module_ready_file):
-    #         self.initialized = True
-    #         return
-    #     else:
-    #         print('Waiting module to be initialized...')
-        
-    #     if utils.wait_until(os.path.exists, MODULE_READY_MAX_WAIT_TIME, MODULE_READY_CHECK_INTERVAL, module_ready_file):
-    #         self.initialized = True
-    #     else:
-    #         logger.log_error('Module initialization timeout', True)
-            
     def is_initialization_owner(self):
         """Indicate whether current thread is the owner of doing module initialization
 
@@ -194,12 +173,3 @@ class ModuleHostMgmtInitializer:
         if not ready_bool:
             # if the asic becomes not ready, remove it from the ready file
             self.remove_asics_from_ready_file([asic_id])
-
-@atexit.register
-def clean_up():
-    """Remove module ready file when program exits.
-    When module host management is enabled, xcvrd is the dependency for all other
-    daemon/CLI who potentially uses SFP API.
-    """
-    if initialization_owner:
-        ModuleHostMgmtInitializer.remove_module_ready_file()
