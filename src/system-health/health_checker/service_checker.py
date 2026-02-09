@@ -41,8 +41,6 @@ def check_docker_image(image_name):
         dlog.log_notice("Checking docker image({}): done".format(image_name))
         return True
     except (docker.errors.ImageNotFound, docker.errors.APIError) as err:
-        logger.log_warning("Failed to get image '{}'. Error: '{}'".format(image_name, err))
-        dlog.log_notice("Checking docker image({}): done".format(image_name))
         return False
 
 class ServiceChecker(HealthChecker):
