@@ -1,0 +1,113 @@
+<mxfile host="app.diagrams.net" version="21.0.0">
+  <diagram name="SW-CPO Architecture" id="architecture">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- LAYER BACKGROUNDS                               -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- Layer 1: SONiC Application Layer -->
+        <mxCell id="bg1" value="SONiC Application Layer" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=left;verticalAlign=top;spacingLeft=8;fontSize=11;fontStyle=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1080" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- Layer 2: Platform Layer -->
+        <mxCell id="bg2" value="Platform Layer  (sonic-platform-common / Nvidia plugin)" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=top;spacingLeft=8;fontSize=11;fontStyle=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="220" width="1080" height="210" as="geometry" />
+        </mxCell>
+
+        <!-- Layer 3: Kernel / SDK -->
+        <mxCell id="bg3" value="Kernel / SDK  (sx_core)" style="text;html=1;strokeColor=#666666;fillColor=#f5f5f5;align=left;verticalAlign=top;spacingLeft=8;fontSize=11;fontStyle=1;fontColor=#333333;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="490" width="1080" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- NODES                                           -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- xcvrd -->
+        <mxCell id="xcvrd" value="&lt;b&gt;xcvrd&lt;/b&gt;&lt;br&gt;Transceiver Daemon" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="85" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Redis -->
+        <mxCell id="redis" value="&lt;b&gt;Redis&lt;/b&gt;&lt;br&gt;APP_DB / STATE_DB" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="760" y="80" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Chassis -->
+        <mxCell id="chassis" value="&lt;b&gt;Chassis&lt;/b&gt;&lt;br&gt;get_change_event() / _sfp_list" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="270" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- CpoPort -->
+        <mxCell id="cpoport" value="&lt;b&gt;CpoPort&lt;/b&gt;&lt;br&gt;sfp_index, bank_index" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="370" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- XcvrApiFactory -->
+        <mxCell id="factory" value="&lt;b&gt;XcvrApiFactory&lt;/b&gt;&lt;br&gt;module type ID → API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="270" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- CmisCpoMemoryMap -->
+        <mxCell id="memmap" value="&lt;b&gt;CmisCpoMemoryMap&lt;/b&gt;&lt;br&gt;CmisMemMap + ELS fields" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="370" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Shared sysfs -->
+        <mxCell id="sysfs_shared" value="&lt;b&gt;Shared sysfs&lt;/b&gt;&lt;br&gt;/sys/.../moduleX/&lt;br&gt;presence, interrupt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="535" width="220" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Bank sysfs -->
+        <mxCell id="sysfs_bank" value="&lt;b&gt;Bank sysfs&lt;/b&gt;&lt;br&gt;/sys/.../moduleX/bankY/&lt;br&gt;eeprom/pages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="500" y="535" width="220" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- EDGES                                           -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- xcvrd -> Chassis (Platform API) -->
+        <mxCell id="e1" value="Platform API" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" edge="1" source="xcvrd" target="chassis" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Chassis -> CpoPort -->
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="chassis" target="cpoport" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CpoPort -> XcvrApiFactory -->
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="cpoport" target="factory" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- XcvrApiFactory -> CmisCpoMemoryMap -->
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="factory" target="memmap" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- xcvrd -> Redis -->
+        <mxCell id="e5" value="publishes diagnostics" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" edge="1" source="xcvrd" target="redis" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CpoPort -> Shared sysfs (dashed, polls) -->
+        <mxCell id="e6" value="polls (1 fd per module)" style="edgeStyle=orthogonalEdgeStyle;dashed=1;fontSize=10;" edge="1" source="cpoport" target="sysfs_shared" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CpoPort -> Bank sysfs -->
+        <mxCell id="e7" value="reads / writes" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" edge="1" source="cpoport" target="sysfs_bank" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
