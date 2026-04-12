@@ -522,6 +522,14 @@ start() {
     if [ "$CREATE_ONLY_CONFIG_DB_BUFFERS_JSON_FOUND" = true ]; then
         $SONIC_DB_CLI CONFIG_DB HSET 'DEVICE_METADATA|localhost' create_only_config_db_buffers true
     fi
+
+    # Disable PFCWD if disable_pfcwd file exists in HWSKU folder
+    if [-d "$HWSKU_FOLDER" ]; then
+        DISABLE_PFCWD="$HWSKU_FOLDER/disable_pfcwd"
+        if [-f "$DISABLE_PFCWD" ]; then
+            $SONIC_DB_CLI CONFIG_DB HSET 'DEVICE_METADATA|localhost' default_pfcwd_status disabled
+        fi
+    fi
     {%- endif %}
 
     DOCKERCHECK=`docker inspect --type container ${DOCKERNAME} 2>/dev/null`
